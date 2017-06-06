@@ -8,6 +8,7 @@ LATEX=pdflatex
 
 %.pdf : %.tex | build_dir
 	$(LATEX) -output-directory $(OUTPUT_DIRS) $<
+	$(LATEX) -output-directory $(OUTPUT_DIRS) $<
 	mv $(OUTPUT_DIRS)/*.pdf .
 
 .PHONY: build_dir clean

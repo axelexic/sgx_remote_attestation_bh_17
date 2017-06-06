@@ -15,7 +15,7 @@
 % \lhead{\sc On the insufficiency of Intel SGX Remote Attestation}
 % \rhead{\sc \lastupdate}
 
-\title{\bf Intel SGX Remote Attestation is not sufficient for Cloud Environments}
+\title{\bf A Framework for analyzing Intel SGX Enclaves}
 \author{\textsc{Yogesh Prem Swami}}
 
 \date{\lastupdate}
@@ -25,11 +25,15 @@
 
 \maketitle
 
+\begin{abstract}
+  Intel SGX provides hardware-enforced cryptograhic protection.
+\end{abstract}
+
 \section{Introduction}
     Intel SGX enclaves provide hardware enforced confidentiality and
     integrity guarantees for running pure code (\textit{i.e.},
     side-effect free code) in the cloud environment. By limiting the
-    application's Trusted Computing Based (TCB) to the CPU and
+    application's Trusted Computing Base (TCB) to the CPU and
     CPU-Cache, SGX provides security guarantees against malicious OS
     kernel and other supervisor software. This guarantee, however, is
     conditional upon the fact that the Cloud Service provider has
