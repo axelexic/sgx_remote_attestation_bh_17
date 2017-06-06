@@ -1,4 +1,5 @@
 \documentclass[11pt]{article}
+\usepackage{cite}
 \usepackage{fancyhdr}
 \usepackage{url}
 \usepackage{tikz}
@@ -11,7 +12,7 @@
 \addtolength{\headheight}{1.6pt}
 
 \newcommand{\lastupdate}{\today}
-
+\newcommand{\ie}{\textit{i.e.}}
 % \lhead{\sc On the insufficiency of Intel SGX Remote Attestation}
 % \rhead{\sc \lastupdate}
 
@@ -26,7 +27,22 @@
 \maketitle
 
 \begin{abstract}
-  Intel SGX provides hardware-enforced cryptograhic protection.
+  Intel SGX enclaves \cite{sgxinnov, sgxinnov2} provide hardware
+  enforced confidentiality and integrity guarantees for running pure
+  computations (\ie, OS-level side-effect free code) in the cloud
+  environment. In addition, SGX provides remote attestation to enable
+  enclaves to prove that they are running inside a genuine SGX
+  hardware and not some (adversary controlled) software simulator.
+
+  While SGX remote attestation is indeed necessary for securely
+  instantiating an enclave, it's by no means sufficient to guarantee
+  that certain sub-computations of an arbitrary enclave cannot be
+  simulated outside of the enclave. In this paper, we present a
+  framework for analyzing SGX enclaves so that no sub-computation of a
+  enclave could be simulated outside a running enclave. We analyze
+  Intel provided EPID\cite{epid} Provisioning Enclave (which is only
+  partially documented in \cite{sgxattest}) within this framework and
+  report our findings.
 \end{abstract}
 
 \section{Introduction}
