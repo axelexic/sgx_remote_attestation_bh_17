@@ -10,7 +10,7 @@
 \textwidth=16cm
 \textheight=22cm
 \addtolength{\headheight}{1.6pt}
-
+\hypersetup{pdfstartview=}
 \newcommand{\lastupdate}{\today}
 \newcommand{\ie}{\textit{i.e.}}
 % \lhead{\sc On the insufficiency of Intel SGX Remote Attestation}
@@ -27,151 +27,57 @@
 \maketitle
 
 \begin{abstract}
-  Intel SGX enclaves \cite{sgxinnov, sgxinnov2} provide hardware
+  Intel SGX enclaves  provide hardware
   enforced confidentiality and integrity guarantees for running pure
-  computations (\ie, OS-level side-effect free code) in the cloud
-  environment. In addition, SGX provides remote attestation to enable
-  enclaves to prove that they are running inside a genuine SGX
-  hardware and not some (adversary controlled) software simulator.
+  computations (\ie, OS-level side-effect-free code) in the cloud
+  environment. In addition, SGX remote attestation enables
+  enclaves to prove that a claimed enclave is indeed running inside a
+  genuine SGX hardware and not some (adversary controlled) SGX
+  simulator.
 
-  While SGX remote attestation is indeed necessary for securely
-  instantiating an enclave, it's by no means sufficient to guarantee
-  that certain sub-computations of an arbitrary enclave cannot be
-  simulated outside of the enclave. In this paper, we present a
-  framework for analyzing SGX enclaves so that no sub-computation of a
-  enclave could be simulated outside a running enclave. We analyze
-  Intel provided EPID\cite{epid} Provisioning Enclave (which is only
-  partially documented in \cite{sgxattest}) within this framework and
-  report our findings.
+  Since cryptographic protocols do not compose well
+  \cite{ucframework}, the SGX remote attestation is only a necessary
+  pre-condition for securely instantiating an enclave. In practice,
+  one needs to analyze all the different interacting enclaves as part of a
+  single protocol to make sure that no sub-computation of the protocol
+  can be simulated outside of the enclave. In this paper, we present a
+  practical framework for analyzing enclaves. We use Intel provided
+  EPID\cite{epid} Provisioning Enclave (which is  only partially
+  documented in \cite{sgxattest}) as an example within this framework
+  and report our findings.
 \end{abstract}
 
 \section{Introduction}
-    Intel SGX enclaves provide hardware enforced confidentiality and
-    integrity guarantees for running pure code (\textit{i.e.},
-    side-effect free code) in the cloud environment. By limiting the
-    application's Trusted Computing Base (TCB) to the CPU and
-    CPU-Cache, SGX provides security guarantees against malicious OS
-    kernel and other supervisor software. This guarantee, however, is
-    conditional upon the fact that the Cloud Service provider has
-    indeed instantiated the enclave on a Genuine Intel SGX hardware
-    and not just on a software simulator of SGX. To guard against such
-    attacks, SGX provides remote attestation to validate that a
-    claimed SGX enclave is indeed running on a real hardware.
+  Intel SGX enclaves\cite{sgxinnov, sgxinnov2} provide hardware
+  enforced confidentiality and  integrity guarantees for running pure
+  computation (\textit{i.e.}, OS-level side-effect-free code) in the
+  cloud environment. By limiting the application's Trusted Computing
+  Base (TCB) to the CPU and CPU-Cache, SGX provides unprecidented
+  confidentiality and integrity guarantees against malicious OS
+  kernels and supervisor software. Since a remote user cannot be sure
+  if an enclave is indeed running on a real-hardware instead of a
+  software simulator (such as QEMU), SGX provides a remote attestation
+  mechanism to prove to third parties that an enclave has indeed been
+  instantiated on a real hardware.
 
-    In this paper we argue that this \textit{static} remote
-    attestation mechanism, while necessary, is \textit{not sufficient}
-    to guarantee confidentiality and integrity of running applications
-    in the cloud. In particular, we demonstrate cases where:
+  Given such strong guarantees, a popular design methodology for
+  creating secure cloud applications is to:
 
-    \begin{itemize}
-        \item A dishonest service provider instantiates both a valid
-          enclave running on real hardware as well as the same enclave
-          running in a software simulator in parallel, is always able
-          to respond correctly to Remote Attestation queries, all the
-          while running the enclave inside a software simulator with
-          full access to enclave's internal state. Schemes such as
-          \cite{Haven, Graphene, Scone}, which try to run unmodified
-          applications inside an enclave are especially vulnerable to
-          such attacks.
+  \begin{itemize}
+    \item Compose multiple independent well-known protocols inside the
+      enclave to create a larger protocol, and
 
-        \item A dishonest service provider rewinds the ``enclave's
-          tape" and replays computation even though the data is
-          encrypted with platform specific
-          \textit{seal-keys}\cite{sgxattest}. This is a form of replay
-          attack, but unlike traditional replay attacks where replay
-          only affects local data, a replayed computation can affect
-          remote data that are outside the realm of the service
-          provider itself. For example, consider a case where an
-          enclave saves encrypted credit cards on disk which cannot be
-          decrypted outside of the enclave. Unless the SGX enclave
-          explicitly protects itself against such attacks, which is
-          non-trivial since SGX does not have either access control or
-          a native replay protection mechanism, a malicious service
-          provider could use the enclave as a (Turing) oracle and
-          replay computation (e.g., re-purchase something using the
-          credit card on a remote side) even though it cannot itself
-          decrypt credit card data. We further note that since SGX can
-          only handle pure\footnote{The only exception is
-            \texttt{rdrand} family of instructions}, side-effect free
-          computation, there's no easy mechanism to protect against
-          such attacks. In fact, even if a platform has TPM, since SGX
-          enclave must communicate through the operating system to
-          interact with the TPM, there's no easy mechanism to
-          ''build-in" replay protection within an enclave. (Intel SDK
-          does provide Intel ME based replay protection---details of
-          which are missing from their documentation. However, by
-          trusting Intel ME, you are also implicitly trusting the
-          cloud service provider, and don't need Intel SGX in that
-          case.)
+    \item Depend on remote attestation to ensure that different parts
+      of the protocol can only
+  \end{itemize}
 
-        \item A dishonest service provider runs multiple instances of
-          the same enclave in parallel (but with potentially different
-          private coins and internal state of each enclave) and
-          chooses a reply that's beneficial to the attacker. For
-          example, consider the case where an enclave wants to do
-          Diffie-Hellman key-exchange with a remote site. Normally,
-          when the remote site sends $g^x$ parameter, the local site
-          has limited control in choosing $g^y$ parameters. However,
-          in a cloud environment, since the cloud service provider can
-          instantiate millions of copies of the enclave in parallel,
-          it has greater freedom in choosing $g^y$. In particular, if
-          certain properties of $x$ and $y$ can be inferred $(g^x,
-          g^y)$ that provides even a small advantage to the attacker,
-          that can be sufficient to break certain protocols that are
-          based on Decisional Diffie-Hellman assumption. While most
-          modern protocols are designed to protect against such
-          adaptively chosen cipher-texts (the example above if
-          completely contrived), implementation flaws in protocols as
-          well as problems with random-number generators, can make
-          such attacks lucrative targets.
+  Good examples of this methodology are \cite{Haven, Graphene, Scone},
+  where the authors try to run unmodified (or minimally modified)
+  applications inside the enclave, and depend upon remote-attestation
+  to make sure that the internal state of the application will not be
+  compromise.
 
-    \end{itemize}
-
-    In addition to bringing awareness to these attacks, this talk will
-    also discuss the details about Remote Attestation mechanism. In
-    particular:
-
-    \begin{itemize}
-
-        \item What keys are embedded inside each SGX hardware, and
-          what's the protocol for providing proof of knowledge of
-          these keys to remote entities? Are these protocols
-          zero-knowledge, as claimed by Intel?
-
-        \item How the EPID's \cite{epid} zero-knowledge proof of
-          knowledge works, what anonymity guarantees it provides, and
-          can it be replaced with other simpler schemes where platform
-          anonymity is not a concern.
-
-        \item What key-exchanges take place between Intel Attestation
-          Service\footnote{
-            \url{https://software.intel.com/sites/default/files/managed/7e/3b/ias-api-spec.pdf}
-          }, Software Vendor's own service, Intel Provide Platform
-          Enclaves (\textit{e.g.}, launch enclave
-          \texttt{lible.signed.so}, etc.), and the enclave itself. To
-          the best of our knowledge, no detailed analysis of this
-          highly convoluted process exists in the literature.
-
-    \end{itemize}
-
-    Based on the attacks described above and the analysis of Remote
-    Attestation, we provide necessary and sufficient conditions that
-    each enclave must possess---in addition to remote attestation---to
-    be secure! In spite of Intel's commendable engineering fete in
-    creating SGX, we are pessimistic that large pieces of existing
-    software can easily be modified to run securely in cloud
-    environment without significant changes. In particular, we
-    emphasize that recent schemes such as \cite{Haven, Graphene,
-      Scone} which try to run unmodified user applications inside an
-    enclave cannot be made unconditionally secure (to give a trivial
-    example, an existing application that uses \texttt{/dev/random} to
-    generate its private coins will be completely insecure if run
-    without modifications inside an enclave). Furthermore, unlike Iago
-    attack \cite{iago}, which assumes that enclaves are securely
-    instantiated but the attacker is trying to abuse the system call
-    interface post instantiation, these attacks are targeted towards
-    enclave instantiation itself.
-
+  It's well known that
 \bibliographystyle{alpha}
 \bibliography{sgx_biblio}
 
