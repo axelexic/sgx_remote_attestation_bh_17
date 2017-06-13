@@ -13,6 +13,10 @@
 \hypersetup{pdfstartview=}
 \newcommand{\lastupdate}{\today}
 \newcommand{\ie}{\textit{i.e.}}
+\newcommand{\mdash}{---}
+\newcommand{\ecall}{\textsf{ecall}}
+\newcommand{\ocall}{\textsf{ocall}}
+\newcommand{\env}{\textsf{environment}}
 % \lhead{\sc On the insufficiency of Intel SGX Remote Attestation}
 % \rhead{\sc \lastupdate}
 
@@ -36,15 +40,17 @@
   simulator.
 
   Since cryptographic protocols do not compose well
-  \cite{ucframework}, the SGX remote attestation is only a necessary
-  pre-condition for securely instantiating an enclave. In practice,
-  one needs to analyze all the different interacting enclaves as part of a
-  single protocol to make sure that no sub-computation of the protocol
-  can be simulated outside of the enclave. In this paper, we present a
-  practical framework for analyzing enclaves. We use Intel provided
-  EPID\cite{epid} Provisioning Enclave (which is  only partially
-  documented in \cite{sgxattest}) as an example within this framework
-  and report our findings.
+  \cite{ucframework} especially when run concurrently, SGX remote
+  attestation is only a necessary pre-condition for securely
+  instantiating an enclave. In practice, one needs to analyze all the
+  different interacting enclaves as a single protocol and make sure
+  that no sub-computation of the protocol can be simulated outside of
+  the enclave. In this paper, we present a practical framework for
+  analyzing enclaves. We analyze Intel provided EPID\cite{epid}
+  \textsf{Provisioning} and \textsf{Quoting} Enclave\cite{sgxattest}
+  within this framework and report our (largely positive) findings. We
+  also provide details about SGX's use of EPID and report
+  (largely negative) results about claimed anonymity guarantees.
 \end{abstract}
 
 \section{Introduction}
@@ -78,18 +84,109 @@
   compromise.
 
 
-  \section{SGX Abstract Computational Model}
+  \section{SGX Computational Model}
+  Intel documentation\cite{intelsdm} provides excellent low-level
+  details about the SGX instructions. This section provides an
+  abstract computational model of SGX which is better suited for
+  security analysis of an SGX enclave.
+
+  Abstractly, an SGX enclave can be thought of as a blackbox that's
+  capable of running any arbitrary algorthim. The blackbox, hereafter
+  called an enclave, communicates with the outside world, called the
+  \env, in three different ways:
+
+  \begin{description}
+  \item[Ecall]: The \env\ can invoke a pre-defined function inside the
+    enclave by passing input parameters and returning internal state
+    of the enclave as results. Such invocations from the \env\ to the
+    enclave are referred to as \ecall. The parameter values passed
+    from the \env\ to the enclave are either coped or directly shared
+    with the enclave. An \ecall\ can terminate in one of the three
+    ways: (a) by returning from the enclave, (b) by making an explicit
+    \ocall, or (c) as a result of an interrupt or exception.
+
+    SGX also supports multithreading, and it's possible for the
+    \env\ to run the same \ecall\ in different threads. However, once
+    an \ecall\ has acquired the thread, future attempts to reuse that
+    same thread will result in error. Futhermore, the number of
+    threads that an enclave can support is pre-determined by the
+    enclave signer, and cannot be altered at runtime.
+
+  \item [Ocall]: While an enclave is executing (because of some
+    previous \ecall), it can make \ocall s  to pre-designated
+    functions in the \env.  Unlike an \ecall, an \ocall\ cannot
+    directly share the internal enclave state with the \env, and
+    must---directly or indirectly---copy the parameters into the
+    \env\ before making an \ocall.
+
+    An interesting characteristic of an \ocall\ is that the \env\ is
+    not requred to return back to the enclave at the end of the
+    \ocall. Since the behavior of pre-designated functions in the
+    \env\ are controlled by the adversary, one should not expect the
+    \env\ to follow the protocol that enclave author envisioned. In
+    particular, it's possible to create a chain of \ecall s and \ocall
+    s such that the adversary can perform operations on the internal
+    (global) state of the enclave.
+
+  \item[Asynchrnonous Exit] In addition to an \ocall, the
+    processor can exit from an enclave due to an interrupt or
+    exception. Such enclave exiting events are called Asynchronous
+    Exit Events, or AEX. Unlike an \ocall, an AEX can transfer control
+    from the enlave to the environment at arbitrary (possibly adversary
+    controlled) points inside the enclave. Like \ocall s, an AEX can
+    either by resumed from where the enclave left off, or the
+    environment can invoke another \ecall (either within the same
+    thread or a different thread).
+  \end{description}
+
+  \subsection{Enclave Creation}
+  An enclave is generated as a dynamically shared library using
+  standard compiler tools. In addition, the entity creating the
+  enclave must also decide up the following information:
+
+  \begin{itemize}
+  \item Stack size of the enclave
+  \item Heap size of the enclave
+  \item Number of threads to be executed
+  \item Auxilary information such as software version, etc.
+  \end{itemize}
+
+  Once all these parameters are finalized, the virtual layout of the
+  enclave is created in memory and the \texttt{SHA256}  hash of then
+  entire memory layout (including the stack, heap, thread control
+  structure, etc.) are computed (See \cite{intelsdm} for details
+  about how the hash is computed). This hash, called
+  \texttt{mrenclave}, is used as the unique identity of the enclave.
+
+  In addition to computing the enclave hash, the software vendor must
+  also sign the enclave using a RSA-3096 Key. The hash of the RSA
+  Public-Key is called \texttt{mrsigner}. As described in
+  \cite{surnaming}, the purpose of signing the enclave is to provide a
+  non-forgeable ``surname'' to a  group of different enclaves from the
+  same software vendor.
+
+  Once an enclave has been signed, it's ready to be instantiated on
+  the platform.
+
+  \subsection{Enclave Instantiation and Access Control}
+
 
   \subsection{SGX Platform Keys}
+  \subsection{SGX Platform Enclaves}
 
-  \subsection{Platform Enclaves}
+  \section{Framework for Analyzing SGX Enclave}
+  \subsection{Concurrent Enclave Execution}
+  \subsection{Parallel Enclave Execution}
+  \subsection{Enclave Rewinding}
 
   \section{SGX Remote Attestation}
-
   \subsection{EPID Overview}
   \subsection{Analysis of SGX Pairing Groups}
   \subsection{Analysis of SGX EPID provisioning}
   \subsection{Analysis of SGX Quoting Enclave}
+
+  \section{Alternatives to Remote Attestation}
+  \section{Conclusion}
 
 \bibliographystyle{alpha}
 \bibliography{sgx_biblio}
