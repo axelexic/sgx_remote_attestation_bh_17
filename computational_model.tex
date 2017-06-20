@@ -1,0 +1,22 @@
+\begin{tikzpicture}[x=1cm, y=-1cm]
+  \newcommand{\ench}{4cm}
+  \newcommand{\encw}{4cm}
+  \newcommand{\alen}{1cm}
+  \newcommand{\adiff}{1cm}
+
+  \node[rectangle, minimum height=\ench, minimum width=\encw, draw] (enc) {};
+  \draw[->,thick] (-\encw / 2.0 - 2*\alen, \adiff ) -- (-\encw/2.0, \adiff) %%
+  node [midway, above] {\textsf{ecall}};
+
+  \draw [->, thick, decorate, %%
+    decoration={snake,amplitude=.4mm,segment length=2mm, post length=1mm}] %%
+  (-\encw/2.0, \adiff) -- (-\encw/2.0 + 1*\adiff + 0.1, \adiff) -- %%
+  (-\encw/2.0 + 1*\adiff , -\adiff) -- (-\encw/2.0, -\adiff);
+
+
+  \draw[<-,thick] (-\encw / 2.0 - 2*\alen, -\adiff ) -- (-\encw/2.0, -\adiff) %%
+  node [midway, above] {\textsf{ocall}};
+
+  \draw[->, thin,densely dashed] (-\encw / 2.0 - 1.5*\alen, -\adiff ) -- %%
+  (-\encw/2.0 - 1.5*\alen , \adiff);
+\end{tikzpicture}

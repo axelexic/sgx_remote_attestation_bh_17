@@ -1,9 +1,12 @@
 \documentclass[11pt]{article}
 \usepackage{cite}
 \usepackage{fancyhdr}
+\usepackage[svgnames]{xcolor}
 \usepackage{url}
 \usepackage{tikz}
+\usetikzlibrary{shapes,snakes,arrows}
 \usepackage{hyperref}
+
 \topmargin=-5mm
 \evensidemargin=0cm
 \oddsidemargin=0cm
@@ -11,12 +14,19 @@
 \textheight=22cm
 \addtolength{\headheight}{1.6pt}
 \hypersetup{pdfstartview=}
+
+\tikzset{>=latex}
+
 \newcommand{\lastupdate}{\today}
 \newcommand{\ie}{\textit{i.e.}}
 \newcommand{\mdash}{---}
 \newcommand{\ecall}{\textsf{ecall}}
 \newcommand{\ocall}{\textsf{ocall}}
 \newcommand{\env}{\textsf{environment}}
+\newcommand{\mrenclave}{\textsf{mrenclave}}
+\newcommand{\mrsigner}{\textsf{mrsigner}}
+\newcommand{\sha}{\textsf{sha256}}
+
 % \lhead{\sc On the insufficiency of Intel SGX Remote Attestation}
 % \rhead{\sc \lastupdate}
 
@@ -139,37 +149,41 @@
     thread or a different thread).
   \end{description}
 
+  \begin{center}
+  \input{computational_model}
+  \end{center}
+
   \subsection{Enclave Creation}
   An enclave is generated as a dynamically shared library using
   standard compiler tools. In addition, the entity creating the
-  enclave must also decide up the following information:
-
-  \begin{itemize}
-  \item Stack size of the enclave
-  \item Heap size of the enclave
-  \item Number of threads to be executed
-  \item Auxilary information such as software version, etc.
-  \end{itemize}
+  enclave must also decide up front on the following information:  (a)
+  stack size of the enclave, (b) heap size of the enclave, (c) number
+  of possible threads that can run concurrently, and (d) any other
+  auxilary information such as software version, etc.
 
   Once all these parameters are finalized, the virtual layout of the
-  enclave is created in memory and the \texttt{SHA256}  hash of then
+  enclave is created in memory and \sha,  hash of then
   entire memory layout (including the stack, heap, thread control
   structure, etc.) are computed (See \cite{intelsdm} for details
   about how the hash is computed). This hash, called
-  \texttt{mrenclave}, is used as the unique identity of the enclave.
+  \mrenclave, is used as the unique identity of the enclave.
 
-  In addition to computing the enclave hash, the software vendor must
-  also sign the enclave using a RSA-3096 Key. The hash of the RSA
-  Public-Key is called \texttt{mrsigner}. As described in
-  \cite{surnaming}, the purpose of signing the enclave is to provide a
-  non-forgeable ``surname'' to a  group of different enclaves from the
-  same software vendor.
+  In addition to \textsf{mrenclave}, the software vendor must
+  also sign the enclave using a RSA-3072 key. The hash of the RSA
+  Public-Key is called \mrsigner. As described in
+  \cite{surnaming}, the purpose of the signature is to provide an
+  unforgeable identity---a \textit{surname} based lineage---to a set
+  of enclaves based on the vendor.
 
-  Once an enclave has been signed, it's ready to be instantiated on
-  the platform.
+  It should be noted that the \mrenclave\ of an enclave doesn't
+  change even when the signing key is changed. This is
+  significant when validating attestation or deriving keys based on
+  \mrenclave.
 
   \subsection{Enclave Instantiation and Access Control}
-
+  An properly signed enclave can run on any Intel SGX Processor. SGX
+  provides minimal access control through the use of launch enclave
+  and enclave white-listing.
 
   \subsection{SGX Platform Keys}
   \subsection{SGX Platform Enclaves}
@@ -181,9 +195,9 @@
 
   \section{SGX Remote Attestation}
   \subsection{EPID Overview}
-  \subsection{Analysis of SGX Pairing Groups}
-  \subsection{Analysis of SGX EPID provisioning}
-  \subsection{Analysis of SGX Quoting Enclave}
+  \subsection{SGX Pairing Groups}
+  \subsection{SGX EPID provisioning}
+  \subsection{SGX Quoting Enclave}
 
   \section{Alternatives to Remote Attestation}
   \section{Conclusion}

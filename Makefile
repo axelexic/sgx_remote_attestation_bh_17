@@ -1,7 +1,8 @@
-SOURCES     := sgx_analysis_framework.tex
+SOURCES     := $(wildcard *.tex) $(wildcard *.bib)
+MAIN_SRC    := sgx_analysis_framework.tex
 OUTPUT_DIRS := build
-ALL         := $(SOURCES:%.tex=%.pdf)
-AUX_SRC     := $(SOURCES:%.tex=%.aux)
+ALL         := sgx_analysis_framework.pdf
+AUX_SRC     := $(MAIN_SRC:%.tex=%.aux)
 HOST 		:= $(shell uname)
 
 all : $(ALL)
@@ -15,11 +16,11 @@ endif
 LATEX=pdflatex
 BIBTEX=bibtex
 
-%.pdf : %.tex | build_dir
-	$(LATEX) -output-directory $(OUTPUT_DIRS) $<
+$(ALL) : $(SOURCES) | build_dir
+	$(LATEX) -output-directory $(OUTPUT_DIRS) $(MAIN_SRC)
 	$(BIBTEX) $(OUTPUT_DIRS)/$(AUX_SRC)
-	$(LATEX) -output-directory $(OUTPUT_DIRS) $<
-	$(LATEX) -output-directory $(OUTPUT_DIRS) $<
+	$(LATEX) -output-directory $(OUTPUT_DIRS) $(MAIN_SRC)
+	$(LATEX) -output-directory $(OUTPUT_DIRS) $(MAIN_SRC)
 	mv $(OUTPUT_DIRS)/*.pdf .
 	$(OPEN) $@
 
