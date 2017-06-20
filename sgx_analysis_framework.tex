@@ -17,6 +17,8 @@
 
 \tikzset{>=latex}
 
+\newcommand{\secref}[1]{\S\ref{#1}}
+
 \newcommand{\lastupdate}{\today}
 \newcommand{\ie}{\textit{i.e.}}
 \newcommand{\mdash}{---}
@@ -94,6 +96,7 @@
   compromise.
 
   \section{SGX Computational Model}
+  \label{sec:model}
   Intel documentation\cite{intelsdm} provides excellent low-level
   details about the SGX instructions. This section provides an
   abstract computational model of SGX which is better suited for
@@ -116,7 +119,7 @@
     enclave by passing input parameters and returning internal state
     of the enclave as results. Such invocations from the \env\ to the
     enclave are referred to as \ecall. The parameter values passed
-    from the \env\ to the enclave are either coped or directly shared
+    from the \env\ to the enclave are either copied or directly shared
     with the enclave. An \ecall\ can terminate in one of the three
     ways: (a) by returning from the enclave, (b) by making an explicit
     \ocall, or (c) as a result of an interrupt or exception.
@@ -153,34 +156,59 @@
     either by resumed from where the enclave left off, or the
     environment can invoke another \ecall (either within the same
     thread or a different thread).
-  \end{description}
 
+    Since an adversary can create multiple running copies of an
+    enclave and selectively interrupt each enclave to cause and AEX,
+    it can be used as a means to ``rewind'' the internal state of of
+    the enclave. Given that proof-of-knowledge \cite{BellarePOK}
+    protocols fundamentally have a \textit{knowledge-extractor} based
+    on rewinding, an enclave must ensure that it does not leak secrets
+    when interrupted by an AEX.
+
+  \end{description}
 
   \subsection{Enclave Creation}
   An enclave is generated as a dynamically shared library using
   standard compiler tools. In addition, the entity creating the
-  enclave must also decide up front on the following information:  (a)
-  stack size of the enclave, (b) heap size of the enclave, (c) number
-  of possible threads that can run concurrently, and (d) any other
-  auxilary information such as software version, etc.
+  enclave must also decide up-front on the following information:
 
-  Once all these parameters are finalized, the virtual layout of the
-  enclave is created in memory and \sha,  hash of then
+  \begin{description}
+    \item[Attributes]: The attributes of the enclave, such the kind of keys (e.g.,
+      should  it have access to high privilege keys such as Launch Key or Platform
+      Provisioning Key)
+    \item[Stack size]: The enclave author must estimate the size of the
+      stack needed by enclave and this value cannot be changed once
+      the enclave has been instantiated.
+    \item[Heap size]: Like the stack size, the heap-size of the enclave
+      must also be fixed at the time of creating the enclave. In
+      SGXv2, this value can be changed post instantiation.
+    \item[Thread count]: An enclave must also decide upon the number
+      of threads that can run conconrrently. As pointed out in
+      \secref{sec:model}, concurrency can have a dramatically negative
+      impact on the security of the certain protocols, and one should
+      not select this parameter just on the basis of performance
+      concerns, but also on the basis of security concerns.
+    \item[Software versioning]: SGX provides elaborate
+      software-upgrade and life-cycle management faciliaties and
+      allows software vendors to make use of these features.
+  \end{description}
+  Based on these parameters, the enclave signing  tool creates a
+  virtual memory layout of the enclave and comptes a hash of the
   entire memory layout (including the stack, heap, thread control
-  structure, etc.) are computed (See \cite{intelsdm} for details
-  about how the hash is computed). This hash, called
-  \mrenclave, is used as the unique identity of the enclave.
+  structure, etc.)  See \cite{intelsdm} for details
+  about how the hash is computed. This hash, called
+  \mrenclave, is used as the unique identifier for the enclave.
 
   In addition to \textsf{mrenclave}, the software vendor must
   also sign the enclave using a RSA-3072 key. The hash of the RSA
-  Public-Key is called \mrsigner. As described in
-  \cite{surnaming}, the purpose of the signature is to provide an
-  unforgeable identity---a \textit{surname} based lineage---to a set
-  of enclaves based on the vendor.
+  Public-Key is called \mrsigner. As described in \cite{surnaming},
+  the purpose of the signature is to provide an unforgeable
+  identity---a \textit{surname} based lineage---to a set of enclaves
+  based on the vendor.
 
   It should be noted that the \mrenclave\ of an enclave doesn't
-  change even when the signing key is changed. This is
-  significant when validating attestation or deriving keys based on
+  change even when the signing key is changed. This is significant
+  when validating attestation or deriving keys based on
   \mrenclave.
 
   \subsection{Enclave Instantiation and Access Control}
@@ -196,6 +224,31 @@
   removed.)
 
   \subsection{SGX Platform Keys}
+  As described in \cite{sgxattest}, each Intel SGX capable processor
+  contains two statistically independent base keys:
+  \textit{Root Provisioning Key} and \textit{Root Seal Key}. The Root
+  Provisioning Key is used as the Root of trust between the CPU and
+  Intel Attestation Services (IAS) \cite{ias}. Intel retains a copy
+  of this key at the time of manufacturing and uses it to establish
+  the trustworthiness of the processor during EPID join process. Intel
+  claims that \textit{Root Seal Key} is not retained, however, it's
+  not clear whether the this key is generated inside the processor via
+  oracle access (\ie, in such a way that CPU generates the key all by
+  itself using it's own internal random numbers, e.g., as a PUFs), or
+  whether the key is first generated outside the processor, then
+  injected into CPU, and finally destroyed. Unless the keys are
+  generated via oracle access (and Intel can provide a proof for such
+  a claim), one should conside the Root Seal Key to be known to Intel.
+
+  While the application software does not have raw access to the base
+  keys, application software can derived following five named keys:
+
+  \begin{description}
+    \item[Provisioning Key]: This key is derived from Root
+      Provisioning Key. In order to access the Provisioning Key, the
+      enclave attribute's parameters
+  \end{description}
+
 
   \subsection{SGX Platform Enclaves}
 
@@ -210,7 +263,6 @@
   \subsection{SGX EPID provisioning}
   \subsection{SGX Quoting Enclave}
 
-  \section{Alternatives to Remote Attestation}
   \section{Conclusion}
 
 \bibliographystyle{alpha}
