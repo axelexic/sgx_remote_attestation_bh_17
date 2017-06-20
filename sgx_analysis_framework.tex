@@ -93,7 +93,6 @@
   to make sure that the internal state of the application will not be
   compromise.
 
-
   \section{SGX Computational Model}
   Intel documentation\cite{intelsdm} provides excellent low-level
   details about the SGX instructions. This section provides an
@@ -104,6 +103,13 @@
   capable of running any arbitrary algorthim. The blackbox, hereafter
   called an enclave, communicates with the outside world, called the
   \env, in three different ways:
+
+  \begin{figure}[h]
+  \centering
+  \input{computational_model}
+  \caption{SGX Computational Model.}
+  \label{fig:model}
+  \end{figure}
 
   \begin{description}
   \item[Ecall]: The \env\ can invoke a pre-defined function inside the
@@ -131,12 +137,12 @@
 
     An interesting characteristic of an \ocall\ is that the \env\ is
     not requred to return back to the enclave at the end of the
-    \ocall. Since the behavior of pre-designated functions in the
-    \env\ are controlled by the adversary, one should not expect the
-    \env\ to follow the protocol that enclave author envisioned. In
-    particular, it's possible to create a chain of \ecall s and \ocall
-    s such that the adversary can perform operations on the internal
-    (global) state of the enclave.
+    \ocall\ (see \ref{fig:model}). Since the behavior of pre-designated
+    functions in the \env\ are controlled by the adversary, one should
+    not expect the \env\ to follow the protocol that enclave author
+    envisioned. In particular, it's possible to create a chain of
+    \ecall s and \ocall s such that the adversary can perform
+    operations on the internal (global) state of the enclave.
 
   \item[Asynchrnonous Exit] In addition to an \ocall, the
     processor can exit from an enclave due to an interrupt or
@@ -149,9 +155,6 @@
     thread or a different thread).
   \end{description}
 
-  \begin{center}
-  \input{computational_model}
-  \end{center}
 
   \subsection{Enclave Creation}
   An enclave is generated as a dynamically shared library using
@@ -181,11 +184,19 @@
   \mrenclave.
 
   \subsection{Enclave Instantiation and Access Control}
-  An properly signed enclave can run on any Intel SGX Processor. SGX
-  provides minimal access control through the use of launch enclave
-  and enclave white-listing.
+  An properly signed enclave can run on any Intel SGX
+  Processor. However, before an enclave can be instantiated, it must
+  get an authorization token, called \textit{Launch Token}, from Intel
+  provided \textsf{Launch Enclave}. The \textsf{Launch Enclave}
+  enforces policies either on the basis of \mrenclave, \mrsigner, or
+  the attributes of the enclave (such as, whether the enclave is in
+  debug mode) or based on an Intel signed whitelist. (Since SGX
+  doesn't have any in-built mechanism for replay protection, once
+  Intel adds an enclave to the whitelist, it can practically never be
+  removed.)
 
   \subsection{SGX Platform Keys}
+
   \subsection{SGX Platform Enclaves}
 
   \section{Framework for Analyzing SGX Enclave}

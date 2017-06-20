@@ -4,19 +4,53 @@
   \newcommand{\alen}{1cm}
   \newcommand{\adiff}{1cm}
 
-  \node[rectangle, minimum height=\ench, minimum width=\encw, draw] (enc) {};
-  \draw[->,thick] (-\encw / 2.0 - 2*\alen, \adiff ) -- (-\encw/2.0, \adiff) %%
+  \node[rectangle, minimum height=\ench, minimum width=\encw, %%
+    draw] (enc) {};
+  \node at (0,1.75) {Enclave};
+  \draw[->,thick] (-\encw / 2.0 - 2*\alen, 1.75*\adiff ) -- (-\encw/2.0, 1.75*\adiff) %%
   node [midway, above] {\textsf{ecall}};
 
   \draw [->, thick, decorate, %%
     decoration={snake,amplitude=.4mm,segment length=2mm, post length=1mm}] %%
-  (-\encw/2.0, \adiff) -- (-\encw/2.0 + 1*\adiff + 0.1, \adiff) -- %%
-  (-\encw/2.0 + 1*\adiff , -\adiff) -- (-\encw/2.0, -\adiff);
+  (-\encw/2.0, 1.75*\adiff) -- (-\encw/2.0 + 1.25*\adiff, 1.75*\adiff) -- %%
+  (-\encw/2.0 + 1.25*\adiff , .5*\adiff) -- (-\encw/2.0, .5*\adiff);
 
 
-  \draw[<-,thick] (-\encw / 2.0 - 2*\alen, -\adiff ) -- (-\encw/2.0, -\adiff) %%
+  \draw[<-,thick] (-\encw / 2.0 - 1.5*\alen, 0.5*\adiff ) -- (-\encw/2.0, .5*\adiff) %%
   node [midway, above] {\textsf{ocall}};
 
-  \draw[->, thin,densely dashed] (-\encw / 2.0 - 1.5*\alen, -\adiff ) -- %%
-  (-\encw/2.0 - 1.5*\alen , \adiff);
+  \draw[->, thin, densely dashed] (-\encw / 2.0 - 1.5*\alen, .5*\adiff ) -- %%
+  (-\encw/2.0 - 1.5*\alen , 1.75*\adiff);
+
+  \draw[->, thick] (-\encw / 2.0 - 1.5*\alen, .5*\adiff ) -- %%
+  (-\encw/2.0 - 1.5*\alen , -.25*\adiff) -- (-\encw / 2.0, -.25\adiff ) %%
+  node[midway, above]{\textsf{oret}};
+
+  \draw [-*, thick, decorate, %%
+    decoration={snake,amplitude=.4mm,segment length=2mm, post length=1mm}] %%
+  (-\encw/2.0, -.25*\adiff) -- (-\encw/2.0 + 1.25*\adiff, -.25*\adiff) -- %%
+  (-\encw/2.0 + 1.25*\adiff, -1.*\adiff);
+
+  \draw [->, thick, decorate, red!70!black,%%
+    decoration={snake,amplitude=.4mm,segment length=2mm, post length=1mm}] %%
+  (-\encw/2.0 + 1.25*\adiff, -1.*\adiff) -- (-\encw/2.0, -1.*\adiff);
+
+  \draw[<-,thick, red!70!black] (-\encw / 2.0 - 1.5*\alen, -1*\adiff ) -- %%
+  (-\encw/2.0, -1*\adiff) node [midway, above] {\textsf{AEX}};
+
+  \draw[->, thick, red!70!black] (-\encw / 2.0 - 1.5*\alen, -1*\adiff ) -- %%
+  (-\encw/2.0 - 1.5*\alen , -1.75*\adiff) -- (-\encw / 2.0, -1.75\adiff ) %%
+  node[midway, above]{\textsf{eresume}};
+
+  \draw[->, thin, densely dashed] (-\encw / 2.0 - 1.5*\alen, -\adiff ) -- %%
+  (-\encw/2.0 - 1.75*\alen, -\adiff) --  (-\encw/2.0 - 1.75*\alen, 1.75*\adiff);
+
+  \draw [->, thick, decorate, %%
+    decoration={snake,amplitude=.4mm, segment length=3mm, post length=1mm}] %%
+  (-\encw/2.0 + 2*\adiff, 1.75*\adiff) --  (-\encw/2.0 + 2*\adiff, -1.25*\adiff);
+
+  \draw [->, thick, decorate, %%
+    decoration={snake,amplitude=.4mm, segment length=3mm, post length=1mm}] %%
+  (-\encw/2.0 + 3*\adiff, 1.75*\adiff) --  (-\encw/2.0 + 3*\adiff, -1.25*\adiff);
+
 \end{tikzpicture}
