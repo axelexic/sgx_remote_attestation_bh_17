@@ -6,6 +6,7 @@
 \usepackage{tikz}
 \usetikzlibrary{shapes,snakes,arrows}
 \usepackage{hyperref}
+\usepackage{graphicx}
 
 \topmargin=-5mm
 \evensidemargin=0cm
@@ -143,7 +144,7 @@
 
     An interesting characteristic of an \ocall\ is that the \env\ is
     not requred to return back to the enclave at the end of the
-    \ocall\ (see \ref{fig:model}). Since the behavior of pre-designated
+    \ocall\ (see Figure~\ref{fig:model}). Since the behavior of pre-designated
     functions in the \env\ are controlled by the adversary, one should
     not expect the \env\ to follow the protocol that enclave author
     envisioned. In particular, it's possible to create a chain of
@@ -252,17 +253,24 @@
   oracle access (\ie, in such a way that CPU generates the key all by
   itself using it's own internal random numbers or with PUFs), or
   whether the key is first generated outside the processor, then
-  injected into CPU, and finally destroyed. Unless the keys are
+  injected into CPU, and finally destroyed. Unless these keys are
   generated via oracle access (and Intel can provide a proof to 
-  this effect), one should consider the Root Seal Key to be 
+  that effect), one should consider the Root Seal Key to be 
   known to Intel.
 
+  \begin{figure}[h]
+  \centering
+  \includegraphics[scale=.75]{Diagrams/KeyHierarchy}
+  \caption{Intel SGX Platform Keys}
+  \label{fig:keys}
+  \end{figure}
+
   An application software does not have raw acceess to these base 
-  keys. However, an application can access several \textit{named} 
-  keys that derived from the base key:
+  keys. However, an application can access following \textit{named} 
+  keys that are derived from these two base key (see Figure~\ref{fig:keys}):
 
   \begin{description} 
-    \item[Provisioning Key]: This key is derived from Root
+    \item[Provisioning Key]: This key is derived from
       Provisioning Key and is used as the root-of-trust 
       between the CPU and the Intel Attestation Service during the 
       EPID join process. Since admitting a non-SGX processor to 
