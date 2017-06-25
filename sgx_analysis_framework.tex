@@ -32,6 +32,7 @@
 \newcommand{\pve}{\textsf{PvE}}
 \newcommand{\pce}{\textsf{PcE}}
 \newcommand{\qe}{\textsf{QE}}
+\newcommand{\launchenclave}{\textsf{Launch Enclave}}
 
 % \lhead{\sc On the insufficiency of Intel SGX Remote Attestation}
 % \rhead{\sc \lastupdate}
@@ -54,6 +55,7 @@
   enclaves to prove that a claimed enclave is indeed running inside a
   genuine SGX hardware and not some (adversary controlled) SGX
   simulator.
+
 
   Since cryptographic protocols do not compose well
   \cite{ucframework} especially when run concurrently, SGX remote
@@ -180,31 +182,31 @@
   \begin{description}
     \item[Attributes]: The attributes of an enclave act as an access
       control mechanism that is enforced by the hardware. For example,
-      certain high priviledge keys, such as Launch-Key and Provision-Key 
-      cannot be made accessible to all the enclaves, as it would 
-      compromize the security of entire SGX ecosystem---not just a 
-      given CPU. An enclave author requests the attributes needed by 
-      the enclave at compiler/sign time, and the Launch-Enclave, based 
-      on policy decisions, decides whether to grant or reject an 
-      authorization token (called \textsf{EINITTOKEN}) for instantiating 
+      certain high priviledge keys, such as Launch-Key and Provision-Key
+      cannot be made accessible to all the enclaves, as it would
+      compromize the security of entire SGX ecosystem---not just a
+      given CPU. An enclave author requests the attributes needed by
+      the enclave at compiler/sign time, and the Launch-Enclave, based
+      on policy decisions, decides whether to grant or reject an
+      authorization token (called \textsf{EINITTOKEN}) for instantiating
       the enclave.
     \item[Stack size]: The enclave author must estimate the size of the
-      stack needed by enclave and set its value at enclave creation time. 
+      stack needed by enclave and set its value at enclave creation time.
       Once an enclave is instantiated, this value cannot be changed.
 
-    \item[Heap size]: Like the stack size, the heap-size of the enclave 
-      is also fixed at enclave creation time. In SGXv2, this value can 
+    \item[Heap size]: Like the stack size, the heap-size of the enclave
+      is also fixed at enclave creation time. In SGXv2, this value can
       be changed post instantiation.
 
     \item[Thread count]: An enclave must also decide upon the number
       of threads that can run conconrrently. As pointed out in
       \secref{sec:model}, concurrency can have a dramatically negative
       impact on the security of the certain protocols, and one must
-      not select this parameter just on the basis of performance 
+      not select this parameter just on the basis of performance
       requirements, but also on the basis of security concerns.
-    
-    \item[Software versioning]: SGX provides elaborate software-upgrade 
-      and life-cycle management faciliaties and allows software vendors 
+
+    \item[Software versioning]: SGX provides elaborate software-upgrade
+      and life-cycle management faciliaties and allows software vendors
       to make use of these features.
 
   \end{description}
@@ -228,16 +230,17 @@
   \mrenclave.
 
   \subsection{Enclave Instantiation and Access Control}
-  An properly signed enclave can run on any Intel SGX
-  Processor. However, before an enclave can be instantiated, it must
-  get an authorization token, called \textit{Launch Token}, from Intel
-  provided \textsf{Launch Enclave}. The \textsf{Launch Enclave}
-  enforces policies either on the basis of \mrenclave, \mrsigner, or
-  the attributes of the enclave (such as, whether the enclave is in
-  debug mode) or based on an Intel signed whitelist. (Since SGX
-  doesn't have any in-built mechanism for replay protection, once
-  Intel adds an enclave to the whitelist, it can practically never be
-  removed.)
+  A properly signed enclave can be instantiated on any Intel
+  SGX Processor---subject to access control restrictions enforced
+  by \launchenclave. Before an enclave can be instantiated on an SGX capable
+  processor, it must get an authorization token,
+  called \textit{Launch Token}, from Intel provided \launchenclave. The
+  \launchenclave\ uses a combination of \mrenclave, \mrsigner, the
+  attributes of the enclave and a \textit{whitelist signed by Intel} to decide
+  whether to grant Launch Token to the enclave or not. Once an
+  enclave obtains a Launch Token, the enclave  can continue
+  using it indefinitely, even when the policies of the \launchenclave\
+  might get updated later on.
 
   \subsection{SGX Platform Keys}
   \label
@@ -248,15 +251,14 @@
   Intel Attestation Services (IAS) \cite{ias}. Intel retains a copy
   of this key at the time of manufacturing and uses it to establish
   the trustworthiness of the processor during EPID join process. Intel
-  claims that \textit{Root Seal Key} is not retained. However, it's
-  not clear whether the this key is generated inside the processor via
-  oracle access (\ie, in such a way that CPU generates the key all by
-  itself using it's own internal random numbers or with PUFs), or
-  whether the key is first generated outside the processor, then
-  injected into CPU, and finally destroyed. Unless these keys are
-  generated via oracle access (and Intel can provide a proof to 
-  that effect), one should consider the Root Seal Key to be 
-  known to Intel.
+  claims that Root Seal Key is not retained. However, it's not clear
+  whether the this key is generated inside the processor via oracle
+  access (\ie, in such a way that CPU generates the key all by itself
+  using it's own internal random numbers or with PUFs), or whether the
+  key is first generated outside the processor, then injected into CPU,
+  and finally all outside references destroyed. Unless these keys are
+  generated via oracle access, one should consider the Root Seal Key
+  to be known to Intel.
 
   \begin{figure}[h]
   \centering
@@ -265,65 +267,72 @@
   \label{fig:keys}
   \end{figure}
 
-  An application software does not have raw acceess to these base 
-  keys. However, an application can access following \textit{named} 
-  keys that are derived from these two base key (see Figure~\ref{fig:keys}):
+  An application software does not have raw acceess to these base
+  keys. However, an application can access following \textit{named}
+  keys that are derived from these two base key (see
+  Figure~\ref{fig:keys}):
 
-  \begin{description} 
+  \begin{description}
     \item[Provisioning Key]: This key is derived from
-      Provisioning Key and is used as the root-of-trust 
-      between the CPU and the Intel Attestation Service during the 
-      EPID join process. Since admitting a non-SGX processor to 
-      the Intel Attesttion Service's group of SGX Processors will 
-      completely compromize Remote Attestation of all CPUs, extreme 
-      care must be taken in granting access to Provisioning Key. 
-      Currently, the Launch Enclave only grants Provisioning Key 
+      Provisioning Key and is used as the root-of-trust
+      between the CPU and the Intel Attestation Service during the
+      EPID join process. Since admitting a non-SGX processor to
+      the Intel Attesttion Service's group of SGX Processors will
+      completely compromize Remote Attestation of all CPUs, extreme
+      care must be taken in granting access to Provisioning Key.
+      Currently, the \launchenclave\ only grants Provisioning Key
       access to enclaves that have been signed by Intel. Furthermore,
-      only Provisioning Enclave (\pve) and Provisioning Certification 
-      Enclave (\pce) (both created without debug option) have access to 
+      only Provisioning Enclave (\pve) and Provisioning Certification
+      Enclave (\pce) (both created without debug option) have access to
       Provisioning Key.
 
     \item[Provisioning Seal Key]: This key is derived joinly from Root
-      Provisioning Key and Root Seal Key. The EPID join process, the 
+      Provisioning Key and Root Seal Key. The EPID join process, the
       EPID private-key for each platform is encrypted with this key
       and uploaded to Intel Attestation Service. (See \secref{ssec:epidprov}
-      for details about EPID Join process.)
+      for details about EPID join process.)
 
       Note that the EPID private-key could not just be encrypted with
-      Provisioning Key as that would destory the EPID's blinded-join 
+      Provisioning Key as that would destory the EPID's blinded-join
       protocol. Conversely, the EPID private-key cannot be encrypted
       just with Seal Key as that might allow non-priviledged enclaves
-      to have access to EPID private key and thereby render Remote 
-      Attestation ineffective\footnote{If someone can access EPID 
-      private key, they can sign remote attestation queries for 
-      \textit{any} platform. Furthermore, because of unlinkability, 
-      it will be impossible to determine which platform was abused.}. 
+      to have access to EPID private key and thereby render Remote
+      Attestation ineffective\footnote{If someone could access EPID
+      private key---either directly, or through oracle access---they
+      could sign remote attestation queries for \textit{any}
+      platform. Furthermore, because of anonymimity, it will be
+      impossible to determine which platform was abused in this way.}.
 
-      In spite of this design choice, given the uncertainity about 
-      how the Root Seal Key is generated, one should assume that 
+      In spite of this design choice, given the uncertainity about
+      how the Root Seal Key is generated, one should assume that
       Intel knows the EPID private key for each platform.
 
-      \item[Launch Key]: This key is derived from Root Seal Key and 
-      is used by Launch Enclave to create authorization tokens 
-      (\textsf{EINITTOKEN}) that each non-Intel enclave must obtain 
-      in order to instantiate an enclave. Currently, only a specific 
-      \mrsigner---whose corresponding private-keys are only known 
-      to Intel---can access this Key. In SGXv2, the \mrsigner for 
-      Launch Key can be changed programatically, and any enclave 
-      signed with that \mrsigner can gain access. With this change, 
-      however, it's not clear how Intel intends to protect the 
+      \item[Launch Key]: This key is derived from Root Seal Key and
+      is used by \launchenclave\ to create authorization tokens
+      (\textsf{EINITTOKEN}) that each non-Intel enclave must obtain
+      in order to instantiate an enclave. Only a specific
+      \mrsigner---whose corresponding private-keys are only known
+      to Intel---can access the Launch Key. In SGXv2, the \mrsigner\
+      for \launchenclave\ can be changed programatically,
+      (see \cite{intelsdm} \S39.1.4 for details) and any enclave
+      signed with that \mrsigner\ can gain access. With
+      this change, however, it's not clear how Intel intends
+      to enforce access control restrictions on the
       Proviosioning Key.
 
       \item[Seal Key]: This key is derived from Root Seal Key and used
       for encrypting data specifically for a given CPU.
 
-      \item[Report Key]: This key is derived from Root Seal Key and used 
-      for generating Local Attestation report \secref{sec:localatt}.
+      \item[Report Key]: This key is derived from Root Seal Key and used
+      for Local Attestation (see \secref{sec:localatt} for detailed
+      information on Local Attestation how Report Key is used).
 
   \end{description}
 
-  \subsection{SGX Platform Enclaves}
-  
+  In addition to the named keys, each key can be further diversified using
+  a 128-bit number called \textit{Key Wearout Protection}. In addition,
+  certain keys can be further diversified using \mrenclave\ or \mrsigner\
+  of the enclave.
 
   \section{Framework for Analyzing SGX Enclave}
   \subsection{Concurrent Enclave Execution}
@@ -344,7 +353,7 @@
 
   \subsection{SGX EPID provisioning}
   \label{ssec:epidprov}
-  
+
   \subsection{SGX Quoting Enclave}
   \label{ssec:qe}
 
