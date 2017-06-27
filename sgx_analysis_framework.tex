@@ -33,6 +33,7 @@
 \newcommand{\pce}{\textsf{PcE}}
 \newcommand{\qe}{\textsf{QE}}
 \newcommand{\launchenclave}{\textsf{Launch Enclave}}
+\newcommand{\uc}{\textsf{UC}}
 
 % \lhead{\sc On the insufficiency of Intel SGX Remote Attestation}
 % \rhead{\sc \lastupdate}
@@ -57,49 +58,64 @@
   simulator.
 
 
-  Since cryptographic protocols do not compose well
-  \cite{ucframework} especially when run concurrently, SGX remote
-  attestation is only a necessary pre-condition for securely
-  instantiating an enclave. In practice, one needs to analyze all the
-  different interacting enclaves as a single protocol and make sure
-  that no sub-computation of the protocol can be simulated outside of
-  the enclave. In this paper, we present a practical framework for
-  analyzing enclaves. We analyze Intel provided EPID\cite{epid}
-  \textsf{Provisioning} and \textsf{Quoting} Enclave\cite{sgxattest}
-  within this framework and report our (largely positive) findings. We
-  also provide details about SGX's use of EPID and report
-  (largely negative) results about claimed anonymity guarantees.
+  Since cryptographic protocols do not compose well \cite{ucframework} 
+  especially when run concurrently, SGX remote attestation is only a 
+  necessary pre-condition for securely instantiating an enclave. In 
+  practice, one needs to analyze all the different interacting enclaves 
+  as a single protocol and make sure that no sub-computation of the 
+  protocol can be simulated outside of the enclave. In this paper, 
+  we present a practical framework for analyzing enclaves. We analyze 
+  Intel provided EPID\cite{epid} \textsf{Provisioning} and \textsf{Quoting} 
+  Enclave\cite{sgxattest} within this framework and report our (largely 
+  positive) findings. We also provide details about SGX's use of EPID 
+  and report (largely negative) results about claimed anonymity guarantees.
+  
 \end{abstract}
 
 \section{Introduction}
+\label{sec:intro}
   Intel SGX enclaves\cite{sgxinnov, sgxinnov2} provide hardware
   enforced confidentiality and  integrity guarantees for running pure
   computation (\textit{i.e.}, OS-level side-effect-free code) in the
   cloud environment. By limiting the application's Trusted Computing
   Base (TCB) to the CPU and CPU-Cache, SGX provides unprecidented
   confidentiality and integrity guarantees against malicious OS
-  kernels and supervisor software. Since a remote user cannot be sure
-  if an enclave is indeed running on a real-hardware instead of a
-  software simulator (such as QEMU), SGX provides a remote attestation
-  mechanism to prove to third parties that an enclave has indeed been
-  instantiated on a real hardware.
+  kernels and supervisor software. A popular design 
+  methodology---as evidenced by \cite{Haven, Graphene, Scone} and certain
+  cloud service provider the author has interacted with---for creating 
+  secure cloud applications is as follows:
 
-  Given such strong guarantees, a popular design methodology for
-  creating secure cloud applications is to:
+  \begin{description}
+    \item[Step-1]: Define a remote-attestation mechanism to securely 
+      instantiate an enclave. Quite often, this step is not explicitly 
+      stated probably because a generic black-box attestation scheme
+      is expected to suffice
+    \item[Step-2] Then, largely independently of the remote-attestation 
+      mechanism, define the functionlity that needs to implemented 
+      inside the enclave. This step often involves composing different 
+      cryptographic as well as non-cryptographic protocols as the 
+      application algorithm demands. The assumption behind composing  
+    \item[Step-3] Finally, define a ``run-time workflow," where one first
+      validates the remote-attestation result, and then runs the algorithm
+      implemented in the enclave.
+  \end{description}
 
-  \begin{itemize}
-    \item Compose multiple independent well-known protocols inside the
-      enclave to create a larger protocol, and
+  Unfortunately this approach, while modular and elegant, is not always 
+  secure. As pointed out in \cite{ucframework}, unless a protocol
+  is desgined for ``\textsf{Universal Composition}'' (\uc), where the 
+  real-world behavior and the ideal-world definition (function) of a 
+  protocol are computationally indistinguishable for 
+  \textit{every} adversary controlled environment, it's unlikely 
+  that arbitrary composition of protocols will be secure. On the other 
+  hand, proving results in the \uc-framework is rather difficult and 
+  sometimes it's unclear whether the proof doesn't exist because of 
+  technical difficulties or whether the protocol itself is insecure. 
 
-    \item Depend on remote attestation to ensure that different parts
-      of the protocol can only
-  \end{itemize}
-
-  Good examples of this methodology are \cite{Haven, Graphene, Scone},
-  where the authors try to run unmodified (or minimally modified)
-  applications inside the enclave, and depend upon remote-attestation
-  to make sure that the internal state of the application will not be
-  compromise.
+  In this paper, we present a way to analyze Intel SGX enclaves, which is
+  a compromize between ad-hoc protocol composition and full \uc-based 
+  analysis of subcomponents. The analysis framework exploits the SGX 
+  computational model, and describes problems that lead to the development
+  of \uc, and desribes a framework 
 
   \section{SGX Computational Model}
   \label{sec:model}
@@ -243,7 +259,6 @@
   might get updated later on.
 
   \subsection{SGX Platform Keys}
-  \label
   As described in \cite{sgxattest}, each Intel SGX capable processor
   contains two statistically independent base keys:
   \textit{Root Provisioning Key} and \textit{Root Seal Key}. The Root
@@ -314,7 +329,7 @@
       \mrsigner---whose corresponding private-keys are only known
       to Intel---can access the Launch Key. In SGXv2, the \mrsigner\
       for \launchenclave\ can be changed programatically,
-      (see \cite{intelsdm} \S39.1.4 for details) and any enclave
+      (see \cite[\S39.1.4]{intelsdm} for details) and any enclave
       signed with that \mrsigner\ can gain access. With
       this change, however, it's not clear how Intel intends
       to enforce access control restrictions on the
@@ -330,14 +345,34 @@
   \end{description}
 
   In addition to the named keys, each key can be further diversified using
-  a 128-bit number called \textit{Key Wearout Protection}. In addition,
-  certain keys can be further diversified using \mrenclave\ or \mrsigner\
-  of the enclave.
+  a 128-bit user selected constant called \textit{Key Wearout Protection}. 
+  In addition, certain keys can be further diversified using \mrenclave\ 
+  or \mrsigner\ of the enclave.
 
   \section{Framework for Analyzing SGX Enclave}
+  \label{sec:analysisfwk}
+
+  While an SGX enclave is generally presented as a programming tool
+  to conceal the computational state of an algorithm, in practice each
+  enclave implements a protocol between the \env\ and the algorithm that
+  the enclave implements. The \ocall s, \ecall s, and AEX define the 
+  external interface for interacting with the protocol. An enclave can be
+  considered secure only if the \textit{overall protocol} implemented 
+  by the enclave is secure.
+
+  As described in \secref{sec:intro}, sequential, concurrent, and parallel
+  composition of otherwise secure protocols, does not necessarily result
+  in an overall secure system. One way to formalize the overall security
+  of an enclave would be consider the 
+
   \subsection{Concurrent Enclave Execution}
+  \label{ssec:concexec}
+
   \subsection{Parallel Enclave Execution}
+  \label{ssec:parallelexec}
+
   \subsection{Enclave Rewinding}
+  \label{ssec:rewinding}
 
   \section{Local Attestation}
   \label{sec:localatt}
