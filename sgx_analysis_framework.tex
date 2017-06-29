@@ -7,7 +7,8 @@
 \usetikzlibrary{shapes,snakes,arrows}
 \usepackage{hyperref}
 \usepackage{graphicx}
-\usepackage[complexity, primitives]{cryptocode}
+\usepackage{caption}
+\usepackage{subcaption}
 
 \topmargin=-5mm
 \evensidemargin=0cm
@@ -112,22 +113,42 @@
   or whether the protocol itself is insecure.
 
   We illustrate the problem associated with the protocol composition 
-  with two real-world examples. To set the stage, a cloud service 
-  provider\footnote{This example is based on an actual protocol 
-  designed by a mid-sized cloud-security/compliance firm.} wanted to 
-  migrate its new clients from Amazon Cloud-HSM to an SGX enclave. 
-  The protocol for interacting with the enclave was based on 
-  HTTP Request/Response framework, where different operations (such as
-  \textsf{KeyGen}), were sent as a command, and the enclave would execute
-  them using a single function call.
+  with two real-world examples. While these example might seem specific 
+  to one particular desing instance, nevertheless similar design can be
+  seen in numerous other projects.
 
-  Important use-case for the enclave was to support (a) local key 
-  generation, (b) storing the private-key on disk encrypted with a 
-  scheme that would allow fast key-lookup, (c) creating Certificate 
-  Sining Requests (CSR) using challenge-response protocol 
-  \cite[\S5.2.8.3]{rfc4210}, and (d) installing AEAD encrypted 
-  certificate with the corresponding private key on disk as a single
-  key entity.
+  To set the stage, a cloud service provider\footnote{This example is 
+  based on an actual protocol designed by a mid-sized 
+  cloud-security/compliance firm.} wanted to migrate its new clients 
+  from Amazon Cloud-HSM to an SGX enclave. The protocol for interacting 
+  with the enclave was based on HTTP Request/Response framework, where 
+  different operations (such as \textsf{KeyGen}), were sent as a 
+  command, and the enclave would execute these commands and return a 
+  response. Important use-case for the enclave was to support (a) 
+  local key generation, (b) storing the private-key on disk encrypted 
+  with a scheme that would allow \textit{fast} key-lookup, (c) creating 
+  Certificate Signing Requests (CSR) using challenge-response protocol 
+  \cite[\S5.2.8.3]{rfc4210}, and (d) installing AEAD encrypted certificate 
+  with the corresponding private key on disk as a single key entity. Figure~\
+
+  \begin{figure}[h]
+  \centering
+  \begin{subfigure}[b]{.5\textwidth}
+    \centering
+    \includegraphics[width=.8\linewidth]{Diagrams/SeqCompProblem}
+    \caption{Command Execution Protocol}
+    \label{fig:sequentialcomp}
+  \end{subfigure}%
+  \begin{subfigure}[b]{.5\textwidth}
+    \centering
+    \includegraphics[width=.9\linewidth]{Diagrams/MsgFmt}\\\vfill
+    \includegraphics[width=.9\linewidth]{Diagrams/SealProtocol}
+    \caption{Message format and seal protocol}
+    \label{fig:sealprotocol}
+  \end{subfigure}
+  \caption{Case: Key Management Enclave}
+  \label{fig:usecase}
+  \end{figure}  
 
   \subsection{Sequential Protocol Composition}
 
@@ -150,9 +171,9 @@
 
   \begin{figure}[h]
   \centering
-  \label{fig:model}
   \input{computational_model}
   \caption{SGX Computational Model.}
+  \label{fig:model}
   \end{figure}
 
   \begin{description}
