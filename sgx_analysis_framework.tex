@@ -1,4 +1,4 @@
-\documentclass[11pt]{article}
+\documentclass[10pt]{article}
 \usepackage{cite}
 \usepackage{fancyhdr}
 \usepackage[svgnames]{xcolor}
@@ -7,6 +7,7 @@
 \usetikzlibrary{shapes,snakes,arrows}
 \usepackage{hyperref}
 \usepackage{graphicx}
+\usepackage[complexity, primitives]{cryptocode}
 
 \topmargin=-5mm
 \evensidemargin=0cm
@@ -57,8 +58,7 @@
   genuine SGX hardware and not some (adversary controlled) SGX
   simulator.
 
-
-  Since cryptographic protocols do not compose well \cite{ucframework} 
+  Since cryptographic protocols do not compose well \cite{ucframework}, 
   especially when run concurrently, SGX remote attestation is only a 
   necessary pre-condition for securely instantiating an enclave. In 
   practice, one needs to analyze all the different interacting enclaves 
@@ -80,42 +80,61 @@
   cloud environment. By limiting the application's Trusted Computing
   Base (TCB) to the CPU and CPU-Cache, SGX provides unprecidented
   confidentiality and integrity guarantees against malicious OS
-  kernels and supervisor software. A popular design 
-  methodology---as evidenced by \cite{Haven, Graphene, Scone} and certain
-  cloud service provider the author has interacted with---for creating 
-  secure cloud applications is as follows:
+  kernels and supervisor software. A popular design methodology---as 
+  evidenced by \cite{Haven, Graphene, Scone}---for creating secure 
+  cloud applications is as follows:
 
   \begin{description}
-    \item[Step-1]: Define a remote-attestation mechanism to securely 
+    \item[Step-1:] Define a remote-attestation mechanism to securely 
       instantiate an enclave. Quite often, this step is not explicitly 
-      stated probably because a generic black-box attestation scheme
-      is expected to suffice
-    \item[Step-2] Then, largely independently of the remote-attestation 
-      mechanism, define the functionlity that needs to implemented 
+      stated probably because a generic black-box attestation 
+      scheme---whatever that means---is expected to suffice.
+    \item[Step-2:] Then, largely independently of the remote-attestation 
+      mechanism, define the functionlity that needs to be implemented 
       inside the enclave. This step often involves composing different 
       cryptographic as well as non-cryptographic protocols as the 
-      application algorithm demands. The assumption behind composing  
-    \item[Step-3] Finally, define a ``run-time workflow," where one first
+      application algorithm demands.
+    \item[Step-3:] Finally, define a ``run-time workflow," where one first
       validates the remote-attestation result, and then runs the algorithm
       implemented in the enclave.
   \end{description}
 
-  Unfortunately this approach, while modular and elegant, is not always 
-  secure. As pointed out in \cite{ucframework}, unless a protocol
-  is desgined for ``\textsf{Universal Composition}'' (\uc), where the 
-  real-world behavior and the ideal-world definition (function) of a 
-  protocol are computationally indistinguishable for 
-  \textit{every} adversary controlled environment, it's unlikely 
-  that arbitrary composition of protocols will be secure. On the other 
-  hand, proving results in the \uc-framework is rather difficult and 
-  sometimes it's unclear whether the proof doesn't exist because of 
-  technical difficulties or whether the protocol itself is insecure. 
+  This approach, while modular and elegant from software engineering
+  perspective, is not always secure. As pointed out in 
+  \cite{ucframework}, unless a protocol is desgined for 
+  ``\textsf{Universal Composition}" (\uc)---where, the real-world 
+  behavior and the ideal-world definition (function) of a protocol 
+  are computationally indistinguishable \textit{for every} adversary 
+  controlled environment---it's unlikely that arbitrary composition 
+  of protocols will be secure. On the other hand, proving results in 
+  the \uc-framework is rather difficult and sometimes it's unclear 
+  whether the proof doesn't work because of technical difficulties 
+  or whether the protocol itself is insecure.
+
+  We illustrate the problem associated with the protocol composition 
+  with two real-world examples. To set the stage, a cloud service 
+  provider\footnote{This example is based on an actual protocol 
+  designed by a mid-sized cloud-security/compliance firm.} wanted to 
+  migrate its new clients from Amazon Cloud-HSM to an SGX enclave. 
+  The protocol for interacting with the enclave was based on 
+  HTTP Request/Response framework, where different operations (such as
+  \textsf{KeyGen}), were sent as a command, and the enclave would execute
+  them using a single function call.
+
+  Important use-case for the enclave was to support (a) local key 
+  generation, (b) storing the private-key on disk encrypted with a 
+  scheme that would allow fast key-lookup, (c) creating Certificate 
+  Sining Requests (CSR) using challenge-response protocol 
+  \cite[\S5.2.8.3]{rfc4210}, and (d) installing AEAD encrypted 
+  certificate with the corresponding private key on disk as a single
+  key entity.
+
+  \subsection{Sequential Protocol Composition}
 
   In this paper, we present a way to analyze Intel SGX enclaves, which is
   a compromize between ad-hoc protocol composition and full \uc-based 
-  analysis of subcomponents. The analysis framework exploits the SGX 
-  computational model, and describes problems that lead to the development
-  of \uc, and desribes a framework 
+  analysis. The analysis framework exploits the SGX computational model, and 
+  describes a few possible ways of attacking an SGX enclave.
 
   \section{SGX Computational Model}
   \label{sec:model}
@@ -131,9 +150,9 @@
 
   \begin{figure}[h]
   \centering
+  \label{fig:model}
   \input{computational_model}
   \caption{SGX Computational Model.}
-  \label{fig:model}
   \end{figure}
 
   \begin{description}
@@ -169,7 +188,7 @@
     \ecall s and \ocall s such that the adversary can perform
     operations on the internal (global) state of the enclave.
 
-  \item[Asynchrnonous Exit] In addition to an \ocall, the
+  \item[Asynchrnonous Exit]: In addition to an \ocall, the
     processor can exit from an enclave due to an interrupt or
     exception. Such enclave exiting events are called Asynchronous
     Exit Events, or AEX. Unlike an \ocall, an AEX can transfer control
