@@ -2,10 +2,15 @@
 \usepackage{cite}
 \usepackage{fancyhdr}
 \usepackage[svgnames]{xcolor}
+\usepackage[colorlinks=true,
+            urlcolor=black, 
+            linkcolor=darkgray,
+            urlcolor=darkgray,
+            citecolor=darkgray
+            ]{hyperref}
 \usepackage{url}
 \usepackage{tikz}
 \usetikzlibrary{shapes,snakes,arrows}
-\usepackage{hyperref}
 \usepackage{graphicx}
 \usepackage{caption}
 \usepackage{subcaption}
@@ -13,9 +18,9 @@
 \topmargin=-5mm
 \evensidemargin=0cm
 \oddsidemargin=0cm
-%% \textwidth=16cm
-%% \textheight=22cm
-%% \addtolength{\headheight}{1.6pt}
+\textwidth=16cm
+\textheight=22cm
+\addtolength{\headheight}{1.6pt}
 \hypersetup{pdfstartview=}
 
 \tikzset{>=latex}
@@ -58,7 +63,7 @@
   (adversary controlled) SGX simulator.
 
   Since cryptographic protocols do not compose well
-  \cite{ucframework}, especially when run concurrently, SGX remote
+  \cite{ucframework,gnuc}, especially when run concurrently, SGX remote
   attestation is only a necessary pre-condition for securely
   instantiating an enclave. In practice, one needs to analyze all the
   different interacting enclaves as a single protocol and make sure
@@ -216,7 +221,7 @@
   describes pitfalls of sequential, concurrent, and parallel
   composition of cryptographic protocols and describes ways in which
   an enclave can be abused by a malicious cloud service
-  provider. \ref{sec:remoteatt} describes Intel's remote attestation
+  provider. \secref{sec:remoteatt} describes Intel's remote attestation
   framework, and describes in detail the SGX remote attestation
   mechanism.
 
@@ -300,7 +305,7 @@
   enclave must also decide up-front on the following information:
 
   \begin{description}
-  \item[Attributes]: The attributes of an enclave act as an access
+  \item[Attributes:] The attributes of an enclave act as an access
     control mechanism that is enforced by the hardware. For example,
     certain high priviledge keys, such as Launch-Key and Provision-Key
     cannot be made accessible to all the enclaves, as it would
@@ -311,23 +316,23 @@
     authorization token (called \textsf{EINITTOKEN}) for instantiating
     the enclave.
 
-  \item[Stack size]: The enclave author must estimate the size of the
+  \item[Stack size:] The enclave author must estimate the size of the
     stack needed by enclave and set its value at enclave creation
     time. Once an enclave is instantiated, this value cannot be
     changed.
 
-  \item[Heap size]: Like the stack size, the heap-size of the enclave
+  \item[Heap size:] Like the stack size, the heap-size of the enclave
     is also fixed at enclave creation time. In SGXv2, this value can
     be changed post instantiation.
 
-  \item[Thread count]: An enclave must also decide upon the number of
+  \item[Thread count:] An enclave must also decide upon the number of
     threads that can run conconrrently. As pointed out in
     \secref{sec:model}, concurrency can have a dramatically negative
     impact on the security of the certain protocols, and one must not
     select this parameter just on the basis of performance
     requirements, but also on the basis of security concerns.
 
-  \item[Software versioning]: SGX provides elaborate software-upgrade
+  \item[Software versioning:] SGX provides elaborate software-upgrade
     and life-cycle management faciliaties and allows software vendors
     to make use of these features.
 
@@ -432,7 +437,7 @@
   usage:
 
   \begin{description}
-  \item[Provisioning Key]: This key is derived from Provisioning Key
+  \item[Provisioning Key:] This key is derived from Provisioning Key
     and is used as the root-of-trust between the CPU and the Intel
     Attestation Service during the EPID join process. Since admitting
     a non-SGX processor to the Intel Attesttion Service's group of SGX
@@ -444,7 +449,7 @@
     Provisioning Certification Enclave (\pce) (both created without
     debug option) have access to Provisioning Key.
 
-  \item[Provisioning Seal Key]: This key is derived joinly from Root
+  \item[Provisioning Seal Key:] This key is derived joinly from Root
     Provisioning Key and Root Seal Key. During the EPID join process,
     the EPID private-key for each platform is encrypted with this key
     and uploaded to Intel Attestation Service. (See
@@ -465,7 +470,7 @@
     the Root Seal Key is generated, one should assume that Intel knows
     the EPID private key for each platform.
 
-  \item[Launch Key]: This key is derived from Root Seal Key and is
+  \item[Launch Key:] This key is derived from Root Seal Key and is
     used by \launchenclave\ to create authorization tokens
     (\textsf{EINITTOKEN}) that each non-Intel enclave must obtain in
     order to instantiate an enclave. Only a specific \mrsigner---whose
@@ -477,21 +482,13 @@
     intends to enforce access control restrictions on the
     Proviosioning Key.
 
-  \item[Seal Key]: This key is derived from Root Seal Key and used for
+  \item[Seal Key:] This key is derived from Root Seal Key and used for
     encrypting data specifically for a given CPU.
 
-  \item[Report Key]: This key is derived from Root Seal Key and used
+  \item[Report Key:] This key is derived from Root Seal Key and used
     for Local Attestation (see \secref{ssec:localatt} for detailed
-    information on Local Attestation how Report Key is used).
+    information on Local Attestation and how Report Key is used).
   \end{description}
-
-  The key derivation for each named key can optionally be made
-  dependent diversified using a 128-bit user selected constant called
-  \textit{Key Wearout Protection}. In addition, certain keys can be
-  further diversified using \mrenclave, \mrsigner, and the attributes
-  of the enclave. (Note that some keys cannot be accessed in raw, and
-  must always be diversified, e.g., Report Key. )
-
 
   \subsection{Local Attestation}
   \label{ssec:localatt}
@@ -541,6 +538,11 @@
   \section{Framework for Analyzing SGX Enclave}
   \label{sec:analysisfwk}
 
+  What does it mean for an enclave to be secure? Ideally, one expects
+  an enclave to behave like a Oracle Turing Machine that responds to 
+  legitimate queries without revealing its internal state. First, 
+  for all valid queries to the enclave, it should be
+  computationally infeasible to simulate the internal state 
   While an SGX enclave is generally presented as a programming tool to
   conceal the computational state of an algorithm, in practice each
   enclave implements a protocol between the \env\ and the algorithm
@@ -575,7 +577,7 @@
   \subsection{SGX EPID provisioning}
   \label{ssec:epidprov}
 
-  \subsection{SGX Quoting Enclave}
+  \subsection{SGX Quoting Enclave and Quote Validation}
   \label{ssec:qe}
 
   \section{Conclusion}
