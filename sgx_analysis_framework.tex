@@ -13,9 +13,9 @@
 \topmargin=-5mm
 \evensidemargin=0cm
 \oddsidemargin=0cm
-\textwidth=16cm
-\textheight=22cm
-\addtolength{\headheight}{1.6pt}
+%% \textwidth=16cm
+%% \textheight=22cm
+%% \addtolength{\headheight}{1.6pt}
 \hypersetup{pdfstartview=}
 
 \tikzset{>=latex}
@@ -36,6 +36,8 @@
 \newcommand{\qe}{\textsf{QE}}
 \newcommand{\launchenclave}{\textsf{Launch Enclave}}
 \newcommand{\uc}{\textsf{UC}}
+\newcommand{\se}{source-enclave}
+\newcommand{\te}{target-enclave}
 
 \title{\bf A framework for analyzing Intel SGX Enclaves}
 \author{\textsc{Yogesh Prem Swami}}
@@ -311,7 +313,7 @@
 
   \item[Stack size]: The enclave author must estimate the size of the
     stack needed by enclave and set its value at enclave creation
-    time.  Once an enclave is instantiated, this value cannot be
+    time. Once an enclave is instantiated, this value cannot be
     changed.
 
   \item[Heap size]: Like the stack size, the heap-size of the enclave
@@ -328,6 +330,7 @@
   \item[Software versioning]: SGX provides elaborate software-upgrade
     and life-cycle management faciliaties and allows software vendors
     to make use of these features.
+
   \end{description}
 
   Based on these parameters, the enclave signing tool creates a
@@ -344,9 +347,9 @@
   identity---a \textit{surname} based lineage---to a set of enclaves
   based on the vendor.
 
-  It should be noted that the \mrenclave\ of an enclave doesn't
-  change even when the signing key is changed. This is significant
-  when validating attestation or deriving keys based on \mrenclave.
+  It should be noted that the \mrenclave\ of an enclave doesn't change
+  even when the signing key is changed. This is significant when
+  validating attestation or deriving keys based on \mrenclave.
 
   \subsection{Enclave Instantiation and Access Control}
 
@@ -363,6 +366,7 @@
   get updated later on.
 
   \subsection{SGX Platform Keys}
+  \label{ssec:platkeys}
 
   As described in \cite{sgxattest}, each Intel SGX capable processor
   contains two statistically independent base keys: \textit{Root
@@ -380,37 +384,71 @@
   are generated via oracle access, one should consider the Root Seal
   Key to be known to Intel.
 
-  \begin{figure}[h]
+  \begin{figure}
   \centering
-  \includegraphics[scale=.75]{Diagrams/KeyHierarchy}
-  \caption{Intel SGX Platform Keys}
+  \begin{subfigure}[t]{.45\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{Diagrams/KeyHierarchy}
+    \caption{The Provisioning Key acts as a root-of-trust between SGX
+      Capable CPU and Intel Attestation Service.  Provisioning Seal
+      Key is used for EPID private key escrow.}
+    \label{fig:keyhierarchy}
+  \end{subfigure}
+  \hspace{.05\textwidth}
+  \begin{subfigure}[t]{.45\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{Diagrams/SGXKDF}
+    \caption{SGX Key derivation function. Only parameters outside the
+      dotted line can be adversarially chosen. Key derivation uses
+      all-zeros for \mrenclave, \mrsigner, and attributes if keypolicy
+      doesn't require them. See \cite[\S38.17]{intelsdm} for
+      additional details.}
+    \label{fig:sgxkdf}
+  \end{subfigure}
+  \caption{SGX Platform and Named Key.}
   \label{fig:keys}
   \end{figure}
 
   An application software does not have raw acceess to these base
-  keys. However, an application can access following \textit{named}
-  keys that are derived from these two base key (see
-  Figure~\ref{fig:keys}):
+  keys. However, an application can access \textit{named} keys that
+  are derived from these two base key (see Figure~\ref{fig:keys}).
+  The key derivation function allows enclave author to specify
+  policies on how to derive enclave specific keys from base
+  keys. These policies allow enclaves to use the \mrenclave,
+  \mrsigner\ and/or attributes from the trusted CPU cache to derive
+  keys. An implication of this design is that enclaves cannot derive
+  keys that might belong to a different enclave. Also note that when
+  key derivation policy does not require specific field such as
+  \mrenclave\ to be used, a default value of all-zeros is
+  used. Therefore, even when ``raw'' named keys are available that has
+  not be specialized for any particular enclave, it's not possible to
+  derive specialized keys from the raw key (assuming, of course that
+  the KDF is a secure PRF). For example, one can obtain the raw
+  Platform Seal Key that is neither tied to \mrenclave\ or
+  \mrsigner\ of any enclave, and yet it's not possible to derive
+  enclave specific Platform Seal Keys from the raw Platform Seal Key.
+
+  The following list describes user accessible keys and their intended
+  usage:
 
   \begin{description}
   \item[Provisioning Key]: This key is derived from Provisioning Key
     and is used as the root-of-trust between the CPU and the Intel
     Attestation Service during the EPID join process. Since admitting
     a non-SGX processor to the Intel Attesttion Service's group of SGX
-    Processors will completely compromize Remote Attestation of all
+    processors will completely compromize remote attestation for all
     CPUs, extreme care must be taken in granting access to
-    Provisioning Key.  Currently, the \launchenclave\ only grants
+    Provisioning Key. Currently, the \launchenclave\ only grants
     Provisioning Key access to enclaves that have been signed by
     Intel. Furthermore, only Provisioning Enclave (\pve) and
     Provisioning Certification Enclave (\pce) (both created without
     debug option) have access to Provisioning Key.
 
-
   \item[Provisioning Seal Key]: This key is derived joinly from Root
-    Provisioning Key and Root Seal Key. The EPID join process, the
-    EPID private-key for each platform is encrypted with this key and
-    uploaded to Intel Attestation Service. (See \secref{ssec:epidprov}
-    for details about EPID join process.)
+    Provisioning Key and Root Seal Key. During the EPID join process,
+    the EPID private-key for each platform is encrypted with this key
+    and uploaded to Intel Attestation Service. (See
+    \secref{ssec:epidprov} for details about EPID join process.)
 
     Note that the EPID private-key could not just be encrypted with
     Provisioning Key as that would destory the EPID's blinded-join
@@ -439,21 +477,66 @@
     intends to enforce access control restrictions on the
     Proviosioning Key.
 
-  \item[Seal Key]: This key is derived from Root Seal Key and used
-    for encrypting data specifically for a given CPU.
+  \item[Seal Key]: This key is derived from Root Seal Key and used for
+    encrypting data specifically for a given CPU.
 
   \item[Report Key]: This key is derived from Root Seal Key and used
-    for Local Attestation (see \secref{sec:localatt} for detailed
+    for Local Attestation (see \secref{ssec:localatt} for detailed
     information on Local Attestation how Report Key is used).
   \end{description}
 
-  In addition to the named keys, each key can be further diversified
-  using a 128-bit user selected constant called \textit{Key Wearout
-    Protection}.  In addition, certain keys can be further diversified
-  using \mrenclave\ or \mrsigner\ of the enclave.
+  The key derivation for each named key can optionally be made
+  dependent diversified using a 128-bit user selected constant called
+  \textit{Key Wearout Protection}. In addition, certain keys can be
+  further diversified using \mrenclave, \mrsigner, and the attributes
+  of the enclave. (Note that some keys cannot be accessed in raw, and
+  must always be diversified, e.g., Report Key. )
+
 
   \subsection{Local Attestation}
   \label{ssec:localatt}
+
+  \begin{figure}
+  \centering
+  \includegraphics[width=0.5\linewidth]{Diagrams/LocalAttestation}
+  \caption{Local attestation computation.
+  Parameters outside the dotted line can be adversarially selected.}
+  \label{fig:localattestation}
+  \end{figure}
+
+  The process of local-attestation allows a source enclave (\se) to
+  prove to a target enclave (\te)---running locally on the same
+  platform---that the \se\ is indeed running on a genuine Intel SGX
+  platform. In addition, the \se\ can optionally use 512-bits of
+  additional data (e.g., hash of public-key) to claim knowledge of
+  certain bit-string.
+
+  The process of local-attestation involves computing CMAC
+  \cite{aescmac} on the \se's identity (i.e., \mrenclave, \mrsigner,
+  etc.) using the \te's Report Key. However, as pointed out in
+  \secref{ssec:platkeys}, the \se\ cannot directly access \te's Report
+  Key. SGX solves this problem by providing \textit{oracle access} to
+  \te's Report Key via \textsf{EREPORT} instruction
+  \cite[\S14.4.1]{intelsdm}. To compute local attestation, the
+  \se\ obtains the \mrenclave\ and attributes of the \te\ through some
+  out-of-band mechanism (which might be adversarial). Based on \te's
+  \mrenclave, the \textsf{EREPORT} instruction internally derives the
+  \te's Report Key and computes \textsf{CMAC} on \se's \mrenclave,
+  \mrsigner, and attributes from the trusted CPU cache (and optionally
+  untrusted user data).  The \textsf{EREPORT} instruction also uses a
+  boot-time random number called \textsf{CR\_REPORT\_KEYID} to
+  diversify the \te's Report Key before \textsf{CMAC} computation. The
+  \textsf{EREPORT} instruction also returns the value of
+  \textsf{CR\_REPORT\_KEYID} that was used during \te's Report Key
+  derivation.
+
+  The verifiation of local attestation involves using \textsf{EGETKEY}
+  instruction to fetch the \te's Report Key and validating the
+  \textsf{CMAC} on Report body in software.  The report body includes
+  \mrsigner, \mrenclave, attributes, and other paramters of the
+  \se. Note that while fetching the report key for verification, the
+  \textsf{EGETKEY} will requite the value of
+  \textsf{CR\_REPORT\_KEYID} to derive the right Report Key.
 
   \section{Framework for Analyzing SGX Enclave}
   \label{sec:analysisfwk}
