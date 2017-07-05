@@ -38,15 +38,6 @@
     publisher = {USENIX Association},
 }
 
-@article{iago,
-  author  = {Stephen Checkoway and Hovav Shacham},
-  title   = {Iago Attacks: Why the System Call API is a Bad Untrusted RPC Interface},
-  journal = {18th International Conference on Architectural Support for Programming Languages and Operating Systems (ASPLOS13)},
-  date    = {16--20},
-  month   = Mar,
-  year    = 2013
-}
-
 @article{sgxattest,
 author = {Simon Johnson and Vinnie Scarlata and Carlos Rozas and Ernie Brickell and Frank Mckeen},
 title  = {Intel\textsuperscript{\textregistered} Software Guard Extensions: EPID Provisioning and Attestation Services},
@@ -91,7 +82,8 @@ Hardware Authentication and Attestation},
    pages = {768--775},
   month   = Aug,
   date    = {20-22},
-  year    = 2010
+  year    = 2010,
+  note    = {\url{https://eprint.iacr.org/2009/095.pdf}}
 }
 
 @misc{ucframework,
@@ -201,3 +193,295 @@ note = {\url{http://eprint.iacr.org/2006/422}}
   month =   jun,
   abstract =  {The National Institute of Standards and Technology (NIST) has recently specified the Cipher-based Message Authentication Code (CMAC), which is equivalent to the One-Key CBC MAC1 (OMAC1) submitted by Iwata and Kurosawa. This memo specifies an authentication algorithm based on CMAC with the 128-bit Advanced Encryption Standard (AES). This new authentication algorithm is named AES-CMAC. The purpose of this document is to make the AES-CMAC algorithm conveniently available to the Internet Community. This memo provides information for the Internet community.},
 }
+
+@Inbook{dynamicGroupSignatures,
+author="Mihir Bellare and Shi, Haixia and Zhang, Chong",
+editor="Alfred Menezes",
+title="Foundations of Group Signatures: The Case of Dynamic Groups",
+bookTitle="Topics in Cryptology -- CT-RSA 2005: The Cryptographers' Track at the RSA Conference 2005, San Francisco, CA, USA, February 14-18, 2005. Proceedings",
+year="2005",
+publisher="Springer Berlin Heidelberg",
+address="Berlin, Heidelberg",
+pages="136--153",
+isbn="978-3-540-30574-3",
+doi="10.1007/978-3-540-30574-3_11",
+note={\url{https://cseweb.ucsd.edu/~mihir/papers/bsz.pdf}}
+}
+
+@Inbook{fulldynamicgroupsignature,
+author="Jonathan Bootle and Andrea Cerulli and Pyrros Chaidos and Essam Ghadafi and Jens Groth",
+editor="Mark Manulis and Ahmad-Reza Sadeghi and Steve Schneider",
+title="Foundations of Fully Dynamic Group Signatures",
+bookTitle="Applied Cryptography and Network Security: 14th International Conference, ACNS 2016, Guildford, UK, June 19-22, 2016. Proceedings",
+year="2016",
+publisher="Springer International Publishing",
+address="Cham",
+pages="117--136",
+isbn="978-3-319-39555-5",
+note = {\url{http://eprint.iacr.org/2016/368}}
+}
+
+
+@inproceedings{concurrentJoinGroupSignatures,
+ author = {Aggelos Kiayias and Moti Yung},
+ title = {Group Signatures with Efficient Concurrent Join},
+ booktitle = {Proceedings of the 24th Annual International Conference on Theory and Applications of Cryptographic Techniques},
+ series = {EUROCRYPT'05},
+ year = {2005},
+ isbn = {3-540-25910-4, 978-3-540-25910-7},
+ location = {Aarhus, Denmark},
+ pages = {198--214},
+ numpages = {17},
+ note = {\url{https://eprint.iacr.org/2005/345.pdf}},
+ publisher = {Springer-Verlag},
+ address = {Berlin, Heidelberg},
+} 
+
+@inproceedings{ChaumGroupSignatures,
+ author = {David Chaum and Eug\`{e}ne Van Heyst},
+ title = {Group Signatures},
+ booktitle = {Proceedings of the 10th Annual International Conference on Theory and Application of Cryptographic Techniques},
+ series = {EUROCRYPT'91},
+ year = {1991},
+ isbn = {3-540-54620-0},
+ location = {Brighton, UK},
+ pages = {257--265},
+ numpages = {9},
+ url = {http://dl.acm.org/citation.cfm?id=1754868.1754897},
+ acmid = {1754897},
+ publisher = {Springer-Verlag},
+ address = {Berlin, Heidelberg},
+}
+
+@InProceedings{BMW03,
+  Author         = {Bellare, Mihir and Micciancio, Daniele and
+                    Warinschi, Bogdan},
+  Title          = {Foundations of group signatures: formal definition,
+                   simplified requirements and a construction based on
+                   trapdoor permutations},
+  Pages          = {614-629},
+  Editor         = {Biham, Eli},
+  Volume         = {2656},
+  Series         = {Lecture Notes in Computer Science},
+  Address        = {Warsaw, Poland},
+  Publisher      = {Springer-Verlag},
+  month          = may,
+  booktitle      = {Advances in cryptology - {EUROCRYPT} 2003, proceedings
+                   of the internarional conference on the theory and
+                   application of cryptographic techniques},
+  year = 2003,
+  note           = {\url{http://cseweb.ucsd.edu/~daniele/papers/BMW.pdf}}
+}
+
+@INPROCEEDINGS{shamirNIZK, 
+author={Uriel Feige and Dror Lapidot and Adi Shamir}, 
+booktitle={Proceedings [1990] 31st Annual Symposium on Foundations of Computer Science}, 
+title={Multiple NonInteractive Zero Knowledge Proofs Under General Assumptions}, 
+year={1990}, 
+pages={308-317 vol.1}, 
+month={Oct},
+}
+
+@inproceedings{coalitionresistant,
+ author = {Ateniese, Giuseppe and Camenisch, Jan and Joye, Marc and Tsudik, Gene},
+ title = {A Practical and Provably Secure Coalition-Resistant Group Signature Scheme},
+ booktitle = {Proceedings of the 20th Annual International Cryptology Conference on Advances in Cryptology},
+ series = {CRYPTO '00},
+ year = {2000},
+ isbn = {3-540-67907-3},
+ pages = {255--270},
+ numpages = {16},
+ note = {\url{http://www.ics.uci.edu/~gts/paps/acjt00.pdf}},
+ acmid = {759593},
+ publisher = {Springer-Verlag},
+ address = {London, UK, UK},
+} 
+
+@Inbook{bbs,
+author="Boneh, Dan
+and Boyen, Xavier
+and Shacham, Hovav",
+editor="Franklin, Matt",
+title="Short Group Signatures",
+bookTitle="Advances in Cryptology -- CRYPTO 2004: 24th Annual International Cryptology Conference, Santa Barbara, California, USA, August 15-19, 2004. Proceedings",
+year="2004",
+publisher="Springer Berlin Heidelberg",
+address="Berlin, Heidelberg",
+pages="41--55",
+isbn="978-3-540-28628-8",
+doi="10.1007/978-3-540-28628-8_3",
+note = {\url{https://www.iacr.org/archive/crypto2004/31520040/groupsigs.pdf}}
+}
+
+
+@Inbook{Furukawa2005,
+author="Furukawa, Jun
+and Imai, Hideki",
+editor="Boyd, Colin
+and Gonz{\'a}lez Nieto, Juan Manuel",
+title="An Efficient Group Signature Scheme from Bilinear Maps",
+bookTitle="Information Security and Privacy: 10th Australasian Conference, ACISP 2005, Brisbane, Australia, July 4-6, 2005. Proceedings",
+year="2005",
+publisher="Springer Berlin Heidelberg",
+address="Berlin, Heidelberg",
+pages="455--467",
+isbn="978-3-540-31684-8",
+doi="10.1007/11506157_38",
+note = {\url{http://dx.doi.org/10.1007/11506157_38}}
+}
+
+@Inbook{ucdaa,
+author="Camenisch, Jan
+and Drijvers, Manu
+and Lehmann, Anja",
+editor="Cheng, Chen-Mou
+and Chung, Kai-Min
+and Persiano, Giuseppe
+and Yang, Bo-Yin",
+title="Universally Composable Direct Anonymous Attestation",
+bookTitle="Public-Key Cryptography -- PKC 2016: 19th IACR International Conference on Practice and Theory in Public-Key Cryptography, Taipei, Taiwan, March 6-9, 2016, Proceedings, Part II",
+year="2016",
+publisher="Springer Berlin Heidelberg",
+address="Berlin, Heidelberg",
+pages="234--264",
+isbn="978-3-662-49387-8",
+doi="10.1007/978-3-662-49387-8_10",
+ note = {\url{http://eprint.iacr.org/2015/1246}}
+
+}
+
+@Inbook{camenischLysyankaya,
+author="Camenisch, Jan
+and Lysyanskaya, Anna",
+editor="Franklin, Matt",
+title="Signature Schemes and Anonymous Credentials from Bilinear Maps",
+bookTitle="Advances in Cryptology -- CRYPTO 2004: 24th Annual International Cryptology Conference, Santa Barbara, California, USA, August 15-19, 2004. Proceedings",
+year="2004",
+publisher="Springer Berlin Heidelberg",
+address="Berlin, Heidelberg",
+pages="56--72",
+isbn="978-3-540-28628-8",
+doi="10.1007/978-3-540-28628-8_4",
+note = {\url{http://cs.brown.edu/~anna/papers/cl04.pdf}}
+}
+
+
+
+@Inbook{bbsplus,
+author="Au, Man Ho
+and Susilo, Willy
+and Mu, Yi",
+editor="De Prisco, Roberto
+and Yung, Moti",
+title="Constant-Size Dynamic k-TAA",
+bookTitle="Security and Cryptography for Networks: 5th International Conference, SCN 2006, Maiori, Italy, September 6-8, 2006. Proceedings",
+year="2006",
+publisher="Springer Berlin Heidelberg",
+address="Berlin, Heidelberg",
+pages="111--125",
+isbn="978-3-540-38081-8",
+doi="10.1007/11832072_8",
+note = {\url{http://eprint.iacr.org/2008/136}},
+
+}
+
+@misc{sigmaprotocol,
+    author = {Ivan Damg{\aa}rd},
+    title = {On {$\Sigma$} Protocols},
+    note = {\url{https://eprint.iacr.org/2010/284.pdf}},
+}
+
+@phdthesis{cramerthesis,
+  author       = {Ronald Cramer}, 
+  title        = {Modular design of secure, yet practical cryptographic protocols},
+  school       = {University of Amsterdam},
+  year         = 1996
+}
+
+@misc{zpkportability,
+  title={On the Portability of Generalized Schnorr Proofs},
+  booktitle={IACR Eprint archive},
+  keywords={cryptographic protocols},
+  note = {\url{http://eprint.iacr.org/2009/050}},
+  journal = {Proceedings of the 28th Annual International Conference on Theory and Applications of Cryptographic Techniques},
+  series = {EUROCRYPT'09},
+  author={Jan Camenisch and Aggelos Kiayias and Moti Yung},
+  year=2009
+}
+
+@inproceedings{FiatShamir,
+ author = {Fiat, Amos and Shamir, Adi},
+ title = {How to Prove Yourself: Practical Solutions to Identification and Signature Problems},
+ booktitle = {Proceedings on Advances in cryptology---CRYPTO '86},
+ year = {1987},
+ isbn = {0-387-18047-8},
+ location = {Santa Barbara, California, USA},
+ pages = {186--194},
+ numpages = {9},
+ publisher = {Springer-Verlag}
+} 
+
+@misc{maurerZKP,
+author = {Ueli Maurer},
+title  = {Unifying Zero-Knowledge Proofs of Knowledge},
+year   = 2009,
+note   = {\url{ftp://ftp.inf.ethz.ch/pub/crypto/publications/Maurer09.pdf}}
+}
+  
+@inproceedings{daa,
+ author = {Brickell, Ernie and Camenisch, Jan and Chen, Liqun},
+ title = {Direct Anonymous Attestation},
+ booktitle = {Proceedings of the 11th ACM Conference on Computer and Communications Security},
+ series = {CCS '04},
+ year = {2004},
+ isbn = {1-58113-961-6},
+ location = {Washington DC, USA},
+ pages = {132--145},
+ numpages = {14},
+ note = {\url{https://eprint.iacr.org/2004/205.pdf}},
+ doi = {10.1145/1030083.1030103},
+ acmid = {1030103},
+ publisher = {ACM},
+ address = {New York, NY, USA},
+ keywords = {anonymous credential systems, cryptographic protocols, integrity based computing, privacy, trusted computing},
+} 
+
+@Article{daaproblems,
+author="Bernhard, D.
+and Fuchsbauer, G.
+and Ghadafi, E.
+and Smart, N. P.
+and Warinschi, B.",
+title="Anonymous attestation with user-controlled linkability",
+journal="International Journal of Information Security",
+year="2013",
+month="Jun",
+day="01",
+volume="12",
+number="3",
+pages="219--249",
+issn="1615-5270",
+doi="10.1007/s10207-013-0191-z",
+note = {\url{https://eprint.iacr.org/2011/658}}
+}
+
+
+@article{tpmDHOracle,
+  added-at = {2014-01-01T00:00:00.000+0100},
+  author = {Acar, Tolga and Nguyen, Lan and Zaverucha, Greg},
+  biburl = {https://www.bibsonomy.org/bibtex/2d5ee2d3bb6843710e2fe8a9728584a9e/dblp},
+  ee = {http://eprint.iacr.org/2013/667},
+  interhash = {11ee4e1d84a1990292688f4404eef805},
+  intrahash = {d5ee2d3bb6843710e2fe8a9728584a9e},
+  journal = {IACR Cryptology ePrint Archive},
+  keywords = {dblp},
+  pages = 667,
+  timestamp = {2014-01-02T11:34:05.000+0100},
+  title = {A TPM Diffie-Hellman Oracle.},
+  url = {http://dblp.uni-trier.de/db/journals/iacr/iacr2013.html#AcarNZ13},
+  volume = 2013,
+  year = 2013
+}
+
+
+

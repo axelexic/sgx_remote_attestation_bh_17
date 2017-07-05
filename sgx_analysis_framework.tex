@@ -3,10 +3,10 @@
 \usepackage{fancyhdr}
 \usepackage[svgnames]{xcolor}
 \usepackage[colorlinks=true,
-            urlcolor=black, 
-            linkcolor=darkgray,
-            urlcolor=darkgray,
-            citecolor=darkgray
+            urlcolor=black!65!white,
+            linkcolor=black!65!white,
+            urlcolor=black!65!white,
+            citecolor=black!65!white
             ]{hyperref}
 \usepackage{url}
 \usepackage{tikz}
@@ -14,6 +14,8 @@
 \usepackage{graphicx}
 \usepackage{caption}
 \usepackage{subcaption}
+\usepackage{listings}
+\usepackage[mono]{inconsolata}
 
 \topmargin=-5mm
 \evensidemargin=0cm
@@ -44,7 +46,7 @@
 \newcommand{\se}{source-enclave}
 \newcommand{\te}{target-enclave}
 
-\title{\bf A framework for analyzing Intel SGX Enclaves}
+\title{\bf Intel SGX Remote Attestation is not sufficient}
 \author{\textsc{Yogesh Prem Swami}}
 
 \date{\lastupdate}
@@ -63,7 +65,7 @@
   (adversary controlled) SGX simulator.
 
   Since cryptographic protocols do not compose well
-  \cite{ucframework,gnuc}, especially when run concurrently, SGX remote
+  \cite{cramerthesis,ucframework,gnuc}, especially when run concurrently, SGX remote
   attestation is only a necessary pre-condition for securely
   instantiating an enclave. In practice, one needs to analyze all the
   different interacting enclaves as a single protocol and make sure
@@ -535,41 +537,204 @@
   \textsf{EGETKEY} will requite the value of
   \textsf{CR\_REPORT\_KEYID} to derive the right Report Key.
 
-  \section{Framework for Analyzing SGX Enclave}
+  \section{Enclave design pitfalls}
   \label{sec:analysisfwk}
 
-  What does it mean for an enclave to be secure? Ideally, one expects
-  an enclave to behave like a Oracle Turing Machine that responds to 
-  legitimate queries without revealing its internal state. First, 
-  for all valid queries to the enclave, it should be
-  computationally infeasible to simulate the internal state 
-  While an SGX enclave is generally presented as a programming tool to
-  conceal the computational state of an algorithm, in practice each
-  enclave implements a protocol between the \env\ and the algorithm
-  that the enclave implements. The \ocall s, \ecall s, and AEX define
-  the external interface for interacting with the protocol. An enclave
-  can be considered secure only if the \textit{overall protocol}
-  implemented by the enclave is secure.
+  Given the computational model of SGX, we describe certain pitfalls
+  in enclave design that might inadvertantly make the enclave
+  malleable, or open door for building knowledge-extractors
+  \cite{BellarePOK}.
 
-  As described in \secref{sec:intro}, sequential, concurrent, and
-  parallel composition of otherwise secure protocols, does not
-  necessarily result in an overall secure system. One way to formalize
-  the overall security of an enclave would be consider the
+  \subsection{Enclave malleability}
+  \label{ssec:malleability}
+  As described in \secref{sec:model}, an application can exit an
+  enclave either via (a) as a function return from an \ecall\ (b) as
+  an \ocall\ or (b) as an AEX. Since it's not required for an
+  \ocall\ or AEX to return back to the enclave from the state it left
+  off, it's possible for a malicious \env\ to make unexpected \ecall s
+  to alter the internale state of the enclave. Enclaves whose global
+  internal state can be influenced by an attacker by not following the
+  expected protocol are called \textit{malleable enclaves} in this
+  document.
 
-  \subsection{Concurrent Enclave Execution}
-  \label{ssec:concexec}
+  To better understand enclave malleability, consider the following
+  example: The US govenment wants to use an SGX enclave to implement
+  2-man rule for launcing nuclear messiles. The 2-man rule requires
+  that at least two \textit{different} members (generals) of the armed
+  forces must authorize the enclave before it can launch a nuclear
+  missile.
 
-  \subsection{Parallel Enclave Execution}
-  \label{ssec:parallelexec}
+  Listing~\ref{code:malleability} describes one way to implement this.
+  Essentially, the enclave keeps a list of generals, their
+  public-keys, and their individual authorization state in a global
+  variable \texttt{GENERALS}. In addition, the enclave keeps the
+  number of distinct generals who have authorized the launch in a
+  global variable \texttt{auth\_count}. Since different generals might
+  be authorizing the launch at different times, the enclave allows
+  each general to authorize a launch individually by signing the
+  concatenation of general's name and some auxilary data.
 
-  \subsection{Enclave Rewinding}
-  \label{ssec:rewinding}
+  \begin{center}
+  \lstset{language=C++,
+          numbers=left, numberstyle=\tiny,
+          numbersep=5pt, stepnumber=1,
+          emph={auth_and_launch,auth_count},
+          emphstyle=\color{red!80!black},
+          emph={[2]valid_general},
+          emphstyle={[2]\color{green!40!black}},
+          basicstyle=\ttfamily,
+          keywordstyle=\color{blue}\ttfamily,
+          stringstyle=\color{red}\ttfamily,
+          commentstyle=\color{brown}\ttfamily,
+          morecomment=[l][\color{magenta}]{\#}
+  }
+  \begin{lstlisting}[captionpos=b,
+                     caption={An enclave suseptible to state malleability},
+                     label=code:malleability]
+/* count of generals who have authorized launch. */
+static int auth_count = 0;
 
-  \section{SGX Remote Attestation}
+/* hardcoded list of generals and their PKs      */
+struct general_info{
+  char                     general_name[256];
+  const sgx_ec256_public_t general_pub;
+  bool                     has_authorized; // initialized to false
+}GENERALS[] = { ... };
+
+/* ecall made by each general with a sig on name + aux data */
+int auth_and_launch(const char* const general_name,
+                    const sgx_ec256_signature_t* sig){
+  struct general_info* valid_general = validate_general(general_name, sig);
+
+  if(!valid_general){ return INVALID_GENERAL; }
+
+  if(!valid_general->has_authorized){
+    auth_count++; // AEX here will be devastating!
+    valid_general->has_authorized = true;
+  }else{
+    return GENERAL_ALREADY_AUTHORIZED_ACTION; // replay
+  }
+
+  if(auth_count == 2){
+    return nuke_the_kashbah(location);
+  }
+
+  return PENDING_AUTHORIZATION;
+}
+\end{lstlisting}
+\end{center}
+
+  Can this enclave be exploited to launch a missile with \textit{just
+    one} authorization, say $\langle g_1, \sigma_1 \rangle$?
+  Surprisingly, the answer is yes! Here is how:
+
+  \begin{enumerate}
+  \item The attacker first feeds $\langle g_1, \sigma_1 \rangle$ to
+    \texttt{auth\_and\_launch} function with the intent of causing an
+    AEX between lines 19 and 20. Since the attacker can artificially
+    cause an interrupt and also instantiate multiple copies of the
+    enclave in parallel, given a polynimial number of trials (in
+    program length), the attacker can cause an AEX between line 19 and
+    20 W.H.P. Note that at the time of a successful AEX between line
+    19 and 20, the \texttt{auth\_count} and \texttt{has\_authorized}
+    variables will be in an inconsistent state where the
+    \texttt{has\_authorized} would still be \texttt{false} and another
+    \ecall\ to \texttt{auth\_and\_launch} will successfully update the
+    \texttt{auth\_count} variable.
+
+  \item After the enclave has been interrupted by AEX and the
+    processor is ready to resume, the attacker instead of resuming,
+    makes an \ecall\ to \texttt{auth\_and\_launch} again with the same
+    old parameters $\langle g_1, \sigma_1 \rangle$. Since the first
+    \ecall\ had incremented the counter, but left the authorization
+    state inconsitent, the second \ecall\ will once again increment
+    \texttt{auth\_count} leading to a nuclear attack!
+
+  \item While not applicable in this case, in some cases it might be
+    necessary for an attacker to resume the first \ecall\ after the
+    second one has completed. Since the enclave preserves the stack
+    before making an AEX, resuming the first \ecall\ tantamouts to
+    executing \textsf{ERESUME} assembly instruction.
+
+  \end{enumerate}
+
+  It should be emphasized that the problem of state-malleability,
+  where the attacker can influence the internal state of the enclave
+  without ever having direct authorized access to it, is broader in
+  scope than the race condition described above. For example, one can
+  use malleability to induce an error which turns the enclave into an
+  oracle. It should also be emphasized that enclaves should return
+  error codes with security consideration in mind.
+
+  \subsection{Enclave rewinding and knowledge-extractors}
+  \label{ssec:rewind}
+
+  Zero-Knowledge Proof of Knowledge (ZKPK) protocols, by definition
+  have in-built knowledge-extractor \cite{BellarePOK, maurerZKP}. 
+  Normally, the knowledge-extractor from the prover is designed by 
+  giving a simulator the capability to ``rewind'' the prover's state 
+  to arbitrary point during it's execution. Since SGX enclaves can be
+  interrupted by an AEX, it's imporant that a malicious \env\ is not
+  able to rewind the enclave in such a way that it inadvertantly
+  reveals the secret-key.
+
+  Consider the three-move---commit, challenge,
+  blinded-reveal---$\Sigma$-protocols \cite{sigmaprotocol} that are
+  the most efficient and widely-used ZKPKs protocol in practice.
+  Normally, one designs $\Sigma$-protocols \textit{with interaction}
+  between a prover and a verifier in mind, and then uses Fiat-Shamir
+  \cite{FiatShamir} heuristic\footnote{In the Fiat-Shamir heuristic,
+    the prover \textit{pretends} to be a verifier and a
+    random oracle, based on publically known fields of the protocol (such
+    as the commitment value, user's input message, etc.) generates the
+    challenge string.} to convert it into a useful non-interactive
+  use-case such as a signature scheme. Most of these protocols just
+  require the prover, which in this case will be enclave, to respond 
+  to two challenege message for a given commitment message to reveal 
+  the secret.
+
+  If an enclave is not implemented appropriately, one can induce an
+  artificial AEX right after the commitment phase, and call the enclave 
+  with different messages in possibly different threads to generate two
+  responses to the same commitment message. Note that AEX in
+  conjunction with multithreading opens doors for a limited form of
+  enclave rewinding and presents a larger attack surface than AEX
+  alone.  Unless, an enclave requires multithreading, it's wise to set
+  the number of possible threads to the bare minimum.
+
+  \section{SGX remote attestation}
   \label{sec:remoteatt}
+  Intel remote-attestation is a crucial component in the overall 
+  design of SGX platform. While local-attestation (see 
+  \secref{ssec:localatt}) uses a MAC (CMAC), whose properties are 
+  well-known and widely studied, SGX remote-attestation is based on a 
+  Group Signature Scheme \cite{ChaumGroupSignatures} called Enhanced Privay
+  ID (EPID) \cite{epid} \footnote{Unfortunately, the way Intel Attestation
+  Service (IAS) has implemented remote attestation, this statement is 
+  only partially correct. While the underlying scheme is based on EPID, Intel 
+  OAEP \textit{encrypts each signature} with an authenticted public-key in the quoting enclave. 
+  Because of this, even though the scheme is called a signature scheme, one cannot
+  verify locally.}. Even though group signatures have been 
+  studied for a long time \cite{camenischLysyankaya, coalitionresistant, 
+  BMW03, dynamicGroupSignatures}, it wasn't until the Trusted Computing 
+  Group decided to use Direct Anonymous Attestation (DAA) \cite{daa} that group 
+  signatures became widely used. In spite of this long history, DAA was 
+  known to have well-known, serious, real-world \cite{tpmDHOracle}, cryptographic 
+  flaws \cite{daaproblems} in widely deployed systems. It's only recently 
+  that a unified security model has been proposed \cite{ucdaa} and proven 
+  correct in \uc\ framework.
 
-  \subsection{EPID Overview}
+  Given that EPID is based on DAA, it's crucial to understand, both the 
+  theoretical as well as practial aspects of remote-attestation used by SGX is 
+  therefore crucial for building secure enclaves.
+
+  \subsection{Group Signatures and EPID Overview}
   \label{ssec:epid}
+  \cite{bbs}
+  \cite{bbsplus}
+  \cite{concurrentJoinGroupSignatures}
+
+
 
   \subsection{SGX Pairing Groups}
   \label{ssec:pairings}
@@ -577,13 +742,21 @@
   \subsection{SGX EPID provisioning}
   \label{ssec:epidprov}
 
+  \begin{figure}
+  \centering
+  \includegraphics[width=0.8\linewidth]{Diagrams/EpidProvisioning}
+  \caption{Local attestation computation.
+  Parameters outside the dotted line can be adversarially selected.}
+  \label{fig:epidprov}
+  \end{figure}
+
   \subsection{SGX Quoting Enclave and Quote Validation}
   \label{ssec:qe}
 
   \section{Conclusion}
   \label{sec:conclusion}
 
-\bibliographystyle{alpha}
+\bibliographystyle{acm}
 \bibliography{sgx_biblio}
 
 \end{document}
