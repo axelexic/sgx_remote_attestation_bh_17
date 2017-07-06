@@ -1,4 +1,4 @@
-\documentclass[10pt]{article}
+\documentclass[10pt, letterpaper]{article}
 \usepackage{cite}
 \usepackage{fancyhdr}
 \usepackage[svgnames]{xcolor}
@@ -66,17 +66,18 @@
   (adversary controlled) SGX simulator.
 
   Since cryptographic protocols do not compose well
-  \cite{cramerthesis,ucframework,gnuc}, especially when run concurrently, SGX remote
-  attestation is only a necessary pre-condition for securely
-  instantiating an enclave. In practice, one needs to analyze all the
-  different interacting enclaves as a single protocol and make sure
-  that no sub-computation of the protocol can be simulated outside of
-  the enclave. In this paper, we present a practical framework for
-  analyzing enclaves. We analyze Intel provided EPID\cite{epid}
-  \textsf{Provisioning} and \textsf{Quoting} Enclave\cite{sgxattest}
-  within this framework and report our (largely positive) findings. We
-  also provide details about SGX's use of EPID and report (largely
-  negative) results about claimed anonymity guarantees.
+  \cite{cramerthesis,ucframework,gnuc}, especially when run
+  concurrently, SGX remote attestation is only a necessary
+  pre-condition for securely instantiating an enclave. In practice,
+  one needs to analyze all the different interacting enclaves as a
+  single protocol and make sure that no sub-computation of the
+  protocol can be simulated outside of the enclave. In this paper, we
+  present a practical framework for analyzing enclaves. We analyze
+  Intel provided EPID\cite{epid} \textsf{Provisioning} and
+  \textsf{Quoting} Enclave\cite{sgxattest} within this framework and
+  report our (largely positive) findings. We also provide details
+  about SGX's use of EPID and report (largely negative) results about
+  claimed anonymity guarantees.
 
 \end{abstract}
 
@@ -342,7 +343,7 @@
   \end{description}
 
   Based on these parameters, the enclave signing tool creates a
-  virtual memory layout of the enclave and comptes a hash of the
+  virtual memory layout of the enclave and computes a hash of the
   entire memory layout (including the stack, heap, thread control
   structure, etc.)  See \cite{intelsdm} for details about how the hash
   is computed. This hash, called \mrenclave, is used as the unique
@@ -398,8 +399,8 @@
     \centering
     \includegraphics[width=\linewidth]{Diagrams/KeyHierarchy}
     \caption{The Provisioning Key acts as a root-of-trust between SGX
-      Capable CPU and Intel Attestation Service.  Provisioning Seal
-      Key is used for EPID private key escrow.}
+      Capable CPU and Intel Attestation Service. Provisioning Seal Key
+      is used for EPID private key escrow.}
     \label{fig:keyhierarchy}
   \end{subfigure}
   \hspace{.05\textwidth}
@@ -496,20 +497,34 @@
   \subsection{Local Attestation}
   \label{ssec:localatt}
 
+
+
   \begin{figure}
-  \centering
-  \includegraphics[width=0.5\linewidth]{Diagrams/LocalAttestation}
-  \caption{Local attestation computation.
-  Parameters outside the dotted line can be adversarially selected.}
-  \label{fig:localattestation}
+    \centering
+    \begin{subfigure}[h]{.5\textwidth}
+      \centering
+      \includegraphics[width=.95\linewidth]{Diagrams/LocalAttestationFlow}
+      \caption{Local attestation message flow.}
+      \label{fig:localattestationflow}
+    \end{subfigure}%
+    \begin{subfigure}[h]{.5\textwidth}
+      \centering
+      \includegraphics[width=.85\linewidth]{Diagrams/LocalAttestation}
+      \caption{Local attestation computation. Parameters outside the
+        dotted line can be adversarially selected.}
+      \label{fig:localattestation}
+    \end{subfigure}%
+    \caption{Local attestation computation and message flow}
+    \label{fig:localatt}
   \end{figure}
 
   The process of local-attestation allows a source enclave (\se) to
   prove to a target enclave (\te)---running locally on the same
   platform---that the \se\ is indeed running on a genuine Intel SGX
-  platform. In addition, the \se\ can optionally use 512-bits of
-  additional data (e.g., hash of public-key) to claim knowledge of
-  certain bit-string.
+  platform (see Figure~\ref{fig:localattestationflow}). In addition,
+  the \se\ can optionally use 512-bits of additional data (e.g., hash
+  of public-key), called report-data, to claim knowledge of certain
+  bit-string.
 
   The process of local-attestation involves computing CMAC
   \cite{aescmac} on the \se's identity (i.e., \mrenclave, \mrsigner,
@@ -538,7 +553,7 @@
   \textsf{EGETKEY} will requite the value of
   \textsf{CR\_REPORT\_KEYID} to derive the right Report Key.
 
-  \section{Enclave design pitfalls}
+  \section{Enclave malleability and Knowledge Extractors}
   \label{sec:analysisfwk}
 
   Given the computational model of SGX, we describe certain pitfalls
@@ -729,7 +744,7 @@ int auth_and_launch(const char* const general_name,
   hardware and software is answered by the Root Provisioning Key (see
   \secref{ssec:platkeys}). The dilemma of both denying as well as
   granting access to this hardware secret is soved by a two-step
-  process:  
+  process:
 
   \begin{enumerate}
     \item Intel has created a (set of) priviledged enclaves---called
@@ -740,14 +755,13 @@ int auth_and_launch(const char* const general_name,
       access to the Provisioning Key and Provisioning Seal Key. The
       \pve\ and \pce\ use the Provisioning Key as the root-of-trust
       between Intel Attestation Service and the SGX CPU to bootstrap a
-      new set of credentials for a Group Signature Scheme
-      \cite{ChaumGroupSignatures} called Enhanced Privacy ID (EPID)
-      \cite{epid}. Since EPID key provisioning takes place only 
-      once\footnote{EPID re-provisioning might take place if the CPU's
-        Security Version Number (CSVN \cite[\S39.4.2.2]{intelsdm}) or
-        the Software Version Number (ISVSVN
-        \cite[\S39.4.2.1]{intelsdm}) of \pce\ changes.}, the
-      Provisioning Key has minimal exposure. 
+      new set of credentials for a Group Signature Scheme called
+      Enhanced Privacy ID (EPID) \cite{epid}. Since EPID key
+      provisioning takes place only once\footnote{EPID re-provisioning
+        might take place if the CPU's Security Version Number (CSVN
+        \cite[\S39.4.2.2]{intelsdm}) or the Software Version Number
+        (ISVSVN \cite[\S39.4.2.1]{intelsdm}) of \pce\ changes.}, the
+      Provisioning Key has minimal exposure.
 
     \item Once a platform has been provisioned with EPID keys, another
       Intel signed enclave called \textsf{Quoting Enclave} (\qe) is
@@ -755,51 +769,77 @@ int auth_and_launch(const char* const general_name,
       generating remote-attestation results on behalf of other
       arbirary--potentially malicious---enclaves.
 
-      To get a remote attesation, an arbitrary enclave first generates
-      a local attestation with \textsf{Quoting Enclave} as the
-      verification target. The \textsf{Quoting Enclave} then first
-      validates the local-attestation, and subsequently uses EPID key
-      to sign the parameters it has validated during local
-      attestation. Since local-attestation uses the hardware resident
-      identity of the enclave (i.e., \mrenclave, \mrsigner, and
-      enclave attributes), which canot be forged (see
-      \secref{ssec:localatt}), the remote-attestation result on the
-      enclave identity cannot be forged either. Furthermore, since
-      arbitrary software never has direct or oracle access to either
-      Provisioning Key or EPID private-keys, simulator based attacks
-      where simulator runs inside a valid enclave are also thwarted.
+      To compute remote attestation, an arbitrary enclave first
+      generates a local attestation with \textsf{Quoting Enclave} as
+      the target enclave in Figure~\ref{fig:localattestationflow}. The
+      \textsf{Quoting Enclave} first validates the local-attestation
+      report and subsequently uses EPID key to sign all the parameters
+      it validated during local attestation. Since local-attestation
+      uses the hardware resident identity of the enclave (i.e.,
+      \mrenclave, \mrsigner, and enclave attributes), which canot be
+      forged (see \secref{ssec:localatt}), the remote-attestation
+      result on the enclave identity cannot be forged
+      either. Furthermore, since arbitrary software never has direct
+      or oracle access to either Provisioning Key or EPID
+      private-keys, simulator based attacks where the simulator itself
+      is a valid enclave are also thwarted.
   \end{enumerate}
 
-  two conflicting
-  requirements are addressed using a series of this asymetric piece of
-  knowledge is the Root Provisioning Key (see \ref{ssec:platkeys})
-  which is known to the hardware but not known to the software
+  Remote attestation is a crucial component in the overall design of
+  SGX platform. While local-attestation (see \secref{ssec:localatt})
+  uses a MAC (CMAC), whose properties are well-known and widely
+  studied, SGX remote-attestation is based on a Group Signature Scheme
+  \cite{ChaumGroupSignatures} called Enhanced Privay ID
+  (EPID)\footnote{Unfortunately, the way Intel has implemented remote
+    attestation, this statement is only partially correct. While the
+    underlying scheme is based on EPID, the quoting enclave---which is
+    responsible for generating the group signature also
+    \textit{encrypts each signature} with an authenticated public-key!
+    Since no-one apart from Intel can decryt these signatures, no
+    one---not even those with access to Group Public-Key--can validate
+    these signatures.} \cite{epid}. Even though group signatures have
+  been studied for a long time \cite{camenischLysyankaya,
+    coalitionresistant, BMW03, dynamicGroupSignatures}, it wasn't
+  until the Trusted Computing Group decided to use Direct Anonymous
+  Attestation (DAA) \cite{daa} that they became widely used. In spite
+  of this long history, until very recently DAA was known to have
+  well-known, serious, real-world \cite{tpmDHOracle}, cryptographic
+  flaws \cite{daaproblems} in widely deployed systems. It's only
+  recently that a unified security model has been proposed
+  \cite{ucdaa} and proven correct in \uc\ framework. It's therefore
+  crucial to analyze EPID as a signature scheme as well as Intel's
+  implementation to have confidence in the remote attestation
+  mechanism.
 
-  Intel remote-attestation is a crucial component in the overall
-  design of SGX platform. While local-attestation (see
-  \secref{ssec:localatt}) uses a MAC (CMAC), whose properties are
-  well-known and widely studied, SGX remote-attestation is based on a
-  Group Signature Scheme \cite{ChaumGroupSignatures} called Enhanced
-  Privay ID (EPID)\footnote{Unfortunately, the way Intel has
-    implemented remote attestation, this statement is only partially
-    correct. While the underlying scheme is based on EPID, the quoting
-    enclave---which is responsible for generating the group signature
-    also \textit{encrypts each signature} with an authenticated
-    public-key! Since no-one apart from Intel can decryt these
-    signatures, no one---not even those with access to Group
-    Public-Key--can validate these signatures.} \cite{epid}. Even
-  though group signatures have been studied for a long time
-  \cite{camenischLysyankaya, coalitionresistant, BMW03,
-    dynamicGroupSignatures}, it wasn't until the Trusted Computing
-  Group decided to use Direct Anonymous Attestation (DAA) \cite{daa}
-  that they became widely used. In spite of this long history, until
-  very recently DAA was known to have well-known, serious, real-world
-  \cite{tpmDHOracle}, cryptographic flaws \cite{daaproblems} in widely
-  deployed systems. It's only recently that a unified security model
-  has been proposed \cite{ucdaa} and proven correct in \uc\ framework.
+  The rest of this section is organized as follows: \secref{ssec:epid}
+  provides a bird's eye view of Group Signatures and EPID security
+  model. Readers faimilar with Group Signatures, EPID, or DAA can
+  safely skip this sub-section. \secref{ssec:pairings} provides
+  implementation details about the Pairings Group used by Intel's
+  \textsf{Provisioning Enclave} and \textsf{Quoting
+    Enclave}. \secref{ssec:epidprov} provides detailed information on
+  how the \textsf{Provisioning Enclave} joins the Intel SGX EPID
+  group. Finally, \secref{ssec:qe} provides details about
+  \textsf{Quoting Enclave} and how SGX remote attestation should be
+  validated against Intel Attestation Service.
 
-  \subsection{Group Signatures and EPID Overview}
+  \subsection{EPID Overview}
   \label{ssec:epid}
+  In a standard signature scheme, such as ECDSA or RSA-PSS, each
+  signer has a unique private/public key-pair. Given two
+  message/signature pairs $\langle m_1, \sigma_1 \rangle$ and $\langle
+  m_2, \sigma_2 \rangle$, an attacker in possession of $N$ public-keys
+  can easily determine if $m_1$ and $m_2$ were signed by the same
+  private key or not. If such signatures are generated by physical
+  devices, it can be used to track the signing device and thereby
+  destroy the anonymity and privacy of the person using that device.
+
+  Group Signatures were introduced by Chaum and Van Heyst
+  \cite{ChaumGroupSignatures} as a means to preserve the
+  unforgeability and non-repudiation (in case of a dispute) of a
+  standard signature scheme, without compromizing the anonymity of the
+  signer. 
+
   \cite{bbs}
   \cite{bbsplus}
   \cite{concurrentJoinGroupSignatures}
