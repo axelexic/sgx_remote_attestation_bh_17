@@ -39,7 +39,7 @@
 }
 
 @article{sgxattest,
-author = {Simon Johnson and Vinnie Scarlata and Carlos Rozas and Ernie Brickell and Frank Mckeen},
+ author = {Simon Johnson and Vinnie Scarlata and Carlos Rozas and Ernie Brickell and Frank Mckeen},
 title  = {Intel\textsuperscript{\textregistered} Software Guard Extensions: EPID Provisioning and Attestation Services},
 note   = {\url{https://software.intel.com/en-us/blogs/2016/03/09/intel-sgx-epid-provisioning-and-attestation-services}},
 month  = mar,
@@ -235,7 +235,7 @@ note = {\url{http://eprint.iacr.org/2016/368}}
  note = {\url{https://eprint.iacr.org/2005/345.pdf}},
  publisher = {Springer-Verlag},
  address = {Berlin, Heidelberg},
-} 
+}
 
 @inproceedings{ChaumGroupSignatures,
  author = {David Chaum and Eug\`{e}ne Van Heyst},
@@ -273,12 +273,12 @@ note = {\url{http://eprint.iacr.org/2016/368}}
   note           = {\url{http://cseweb.ucsd.edu/~daniele/papers/BMW.pdf}}
 }
 
-@INPROCEEDINGS{shamirNIZK, 
-author={Uriel Feige and Dror Lapidot and Adi Shamir}, 
-booktitle={Proceedings [1990] 31st Annual Symposium on Foundations of Computer Science}, 
-title={Multiple NonInteractive Zero Knowledge Proofs Under General Assumptions}, 
-year={1990}, 
-pages={308-317 vol.1}, 
+@INPROCEEDINGS{shamirNIZK,
+author={Uriel Feige and Dror Lapidot and Adi Shamir},
+booktitle={Proceedings [1990] 31st Annual Symposium on Foundations of Computer Science},
+title={Multiple NonInteractive Zero Knowledge Proofs Under General Assumptions},
+year={1990},
+pages={308-317 vol.1},
 month={Oct},
 }
 
@@ -295,7 +295,7 @@ month={Oct},
  acmid = {759593},
  publisher = {Springer-Verlag},
  address = {London, UK, UK},
-} 
+}
 
 @Inbook{bbs,
 author="Boneh, Dan
@@ -392,7 +392,7 @@ note = {\url{http://eprint.iacr.org/2008/136}},
 }
 
 @phdthesis{cramerthesis,
-  author       = {Ronald Cramer}, 
+  author       = {Ronald Cramer},
   title        = {Modular design of secure, yet practical cryptographic protocols},
   school       = {University of Amsterdam},
   year         = 1996
@@ -419,7 +419,7 @@ note = {\url{http://eprint.iacr.org/2008/136}},
  pages = {186--194},
  numpages = {9},
  publisher = {Springer-Verlag}
-} 
+}
 
 @misc{maurerZKP,
 author = {Ueli Maurer},
@@ -427,7 +427,7 @@ title  = {Unifying Zero-Knowledge Proofs of Knowledge},
 year   = 2009,
 note   = {\url{ftp://ftp.inf.ethz.ch/pub/crypto/publications/Maurer09.pdf}}
 }
-  
+
 @inproceedings{daa,
  author = {Brickell, Ernie and Camenisch, Jan and Chen, Liqun},
  title = {Direct Anonymous Attestation},
@@ -444,7 +444,7 @@ note   = {\url{ftp://ftp.inf.ethz.ch/pub/crypto/publications/Maurer09.pdf}}
  publisher = {ACM},
  address = {New York, NY, USA},
  keywords = {anonymous credential systems, cryptographic protocols, integrity based computing, privacy, trusted computing},
-} 
+}
 
 @Article{daaproblems,
 author="Bernhard, D.
@@ -496,7 +496,7 @@ note = {\url{https://eprint.iacr.org/2011/658}}
  acmid = {1247401},
  publisher = {USENIX Association},
  address = {Berkeley, CA, USA},
-} 
+}
 
 @inproceedings{opensgx,
   title        = {{OpenSGX: An Open Platform for SGX Research}},
@@ -505,4 +505,43 @@ note = {\url{https://eprint.iacr.org/2011/658}}
   month        = feb,
   year         = 2016,
   address      = {San Diego, CA},
+}
+
+@book{epidsdk,
+	author        = {{Intel Open Source (\url{https://01.org})}},
+	title         = {{EPID SDK R3}},
+	year          = 2016,
+	note          = {\url{https://01.org/epid-sdk/downloads}}
+}
+
+@inproceedings{BonehVLR,
+ author = {Boneh, Dan and Shacham, Hovav},
+ title = {Group Signatures with Verifier-local Revocation},
+ booktitle = {Proceedings of the 11th ACM Conference on Computer and Communications Security},
+ series = {CCS '04},
+ year = {2004},
+ isbn = {1-58113-961-6},
+ location = {Washington DC, USA},
+ pages = {168--177},
+ numpages = {10},
+ note = {\url{https://cseweb.ucsd.edu/~hovav/dist/preteripsistic.pdf}},
+ publisher = {ACM},
+ address = {New York, NY, USA},
+ keywords = {group signatures, revocation, trusted computing},
+}
+
+@Inbook{ShoupVFE,
+author="Camenisch, Jan
+and Shoup, Victor",
+editor="Boneh, Dan",
+title="Practical Verifiable Encryption and Decryption of Discrete Logarithms",
+bookTitle="Advances in Cryptology - CRYPTO 2003: 23rd Annual International Cryptology Conference, Santa Barbara, California, USA, August 17-21, 2003. Proceedings",
+year="2003",
+publisher="Springer Berlin Heidelberg",
+address="Berlin, Heidelberg",
+pages="126--144",
+abstract="This paper addresses the problem of designing practical protocols for proving properties about encrypted data. To this end, it presents a variant of the new public key encryption of Cramer and Shoup based on Paillier's decision composite residuosity assumption, along with efficient protocols for verifiable encryption and decryption of discrete logarithms (and more generally, of representations with respect to multiple bases). This is the first verifiable encryption system that provides chosen ciphertext security and avoids inefficient cut-and-choose proofs. The presented protocols have numerous applications, including key escrow, optimistic fair exchange, publicly verifiable secret and signature sharing, universally composable commitments, group signatures, and confirmer signatures.",
+isbn="978-3-540-45146-4",
+doi="10.1007/978-3-540-45146-4_8",
+url="http://dx.doi.org/10.1007/978-3-540-45146-4_8"
 }

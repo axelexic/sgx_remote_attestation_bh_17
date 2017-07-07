@@ -1,5 +1,6 @@
 \documentclass[10pt, letterpaper]{article}
 \usepackage{cite}
+\usepackage{amsfonts}
 \usepackage{fancyhdr}
 \usepackage[svgnames]{xcolor}
 \usepackage[colorlinks=true,
@@ -73,8 +74,8 @@
   single protocol and make sure that no sub-computation of the
   protocol can be simulated outside of the enclave. In this paper, we
   present a practical framework for analyzing enclaves. We analyze
-  Intel provided EPID\cite{epid} \textsf{Provisioning} and
-  \textsf{Quoting} Enclave\cite{sgxattest} within this framework and
+  Intel provided EPID \cite{epid} \textsf{Provisioning} and
+  \textsf{Quoting} enclave \cite{sgxattest} within this framework and
   report our (largely positive) findings. We also provide details
   about SGX's use of EPID and report (largely negative) results about
   claimed anonymity guarantees.
@@ -87,7 +88,7 @@
   enforced confidentiality and integrity guarantees for running pure
   computation (\textit{i.e.}, OS-level side-effect-free code) in the
   cloud environment. By limiting the application's Trusted Computing
-  Base (TCB) to the CPU and CPU-Cache, SGX provides unprecidented
+  Base (TCB) to the CPU and CPU-Cache, SGX provides unprecedented
   confidentiality and integrity guarantees against malicious OS
   kernels and supervisor software. A popular design methodology---as
   evidenced by \cite{Haven, Graphene, Scone}---for creating secure
@@ -100,31 +101,31 @@
       attestation scheme---whatever that means---is expected to be
       sufficient.
     \item[Step-2:] Then, largely independently of the
-      remote-attestation mechanism, define the functionlity that needs
+      remote-attestation mechanism, define the functionality that needs
       to be implemented inside the enclave. This step often involves
       composing different cryptographic as well as non-cryptographic
       protocols in ad-hoc ways to implement the desired algorithm. For
-      example, the enclave may need to read encypted keys from disk,
+      example, the enclave may need to read encrypted keys from disk,
       compute a signature based on that key, create a new set of keys,
       etc.
-    \item[Step-3:] Finally, define a ``run-time workflow," where one
+    \item[Step-3:] Finally, define a ``run-time work flow," where one
       first validates the remote-attestation result, and then runs the
       algorithm implemented by the enclave. This step often requires
       multiple interactions with various other entities such as other
       enclaves, untrusted host software, trusted remote client
-      softrware, and other cryptographic devices such as TPMs.
+      software, and other cryptographic devices such as TPMs.
   \end{description}
 
   It's hard to argue against the simplicity and ease of implementation
   of such a modular software design. However, as pointed out in
-  \cite{ucframework}, unless a protocol is desgined for
+  \cite{ucframework}, unless a protocol is designed for
   ``\textsf{Universal Composition}" (\uc)---where, the real-world
   behavior and the ideal-world definition (function) of a protocol are
   computationally indistinguishable \textit{for every} adversary
   controlled environment---it's unlikely that arbitrary composition of
   such protocols will be secure. On the other hand, proving results in
   the \uc-framework is rather difficult. In this paper we propose a
-  framework for analyzing SGX enclaves that's a compromize between a
+  framework for analyzing SGX enclaves that's a compromise between a
   full \uc-based analysis and completely ad-hoc composition. Before
   describing the framework, we illustrate the problem associated with
   the protocol composition with two real-world examples.
@@ -140,7 +141,7 @@
   to the remote caller.  Important use-case for the enclave were to
   support (a) local key generation, (b) storing the public/private key
   on disk with an AEAD scheme that would allow \textit{fast}
-  key-lookup, and (c) creating Certificate Signing Requests (CSR) from
+  key look-up, and (c) creating Certificate Signing Requests (CSR) from
   the enclave using challenge-response protocol
   \cite[\S5.2.8.3]{rfc4210}, among other
   things. Figure~\ref{fig:sequentialcomp} describes one execution path
@@ -161,7 +162,7 @@
     \caption{Message format and seal protocol}
     \label{fig:sealprotocol}
   \end{subfigure}
-  \caption{Example of a flawed key-management enclave. The commmand
+  \caption{Example of a flawed key-management enclave. The command
     execution protocol ascertains the authenticity of the enclave by
     validating the EPID signature on a randomly generated 256-bit
     nonce, followed by executing an arbitrary mix of commands as
@@ -181,8 +182,8 @@
   responding to remote attestation queries, but then emulate the rest
   of the protocol (including \textsf{KeyGen} and CSR) outside of the
   enclave. While this is obvious in this simplified example, in a more
-  complicated scanerio, where multiple enclaves are interacting with
-  each other, it might not be obvious if certain subcomponents of the
+  complicated scenario, where multiple enclaves are interacting with
+  each other, it might not be obvious if certain sub-components of the
   protocol can be simulated outside. Even though the entire enclave is
   \textit{sequentially composed} from potentially provably-secure
   protocols, the combined protocol is completely insecure.
@@ -215,13 +216,10 @@
 
   To summarize, \textit{an enclave is a protocol} composed of several
   sub-protocols. In order for the enclave to be secure, it's essential
-  that sequential and concurrent composition of subprotocols remain
-  secure. Here, by secure, it's meant that the internal state of the
-  enclave cannot
-
-  The rest of this document is organlized as follows.
+  that sequential and concurrent composition of sub-protocols remain
+  secure. The rest of this document is organized as follows.
   \secref{sec:model} describes the abstract computational model that's
-  better suited for security ananysis. \secref{sec:analysisfwk}
+  better suited for security analysis. \secref{sec:analysisfwk}
   describes pitfalls of sequential, concurrent, and parallel
   composition of cryptographic protocols and describes ways in which
   an enclave can be abused by a malicious cloud service
@@ -236,8 +234,8 @@
   abstract computational model of SGX which is better suited for
   security analysis of an SGX enclave.
 
-  Abstractly, an SGX enclave can be thought of as a blackbox that's
-  capable of running any arbitrary algorthim. The blackbox, hereafter
+  Abstractly, an SGX enclave can be thought of as a black-box that's
+  capable of running any arbitrary algorithm. The black-box, hereafter
   called an enclave, communicates with the outside world, called the
   \env, in three different ways:
 
@@ -258,10 +256,10 @@
     ways: (a) by returning from the enclave, (b) by making an explicit
     \ocall, or (c) as a result of an interrupt or exception.
 
-    SGX also supports multithreading, and it's possible for the
+    SGX also supports multi-threading, and it's possible for the
     \env\ to run the same \ecall\ in different threads. However, once
     an \ecall\ has acquired the thread, future attempts to reuse that
-    same thread will result in error. Futhermore, the number of
+    same thread will result in error. Futher more, the number of
     threads that an enclave can support is pre-determined by the
     enclave signer, and cannot be altered at runtime.
 
@@ -273,19 +271,20 @@
     \ocall.
 
     An interesting characteristic of an \ocall\ is that the \env\ is
-    not requred to return back to the enclave at the end of the
+    not required to return back to the enclave at the end of the
     \ocall\ (see Figure~\ref{fig:model}). Since the behavior of
     pre-designated functions in the \env\ are controlled by the
     adversary, one should not expect the \env\ to follow the protocol
     that enclave author envisioned. In particular, it's possible to
     create a chain of \ecall s and \ocall s such that the adversary
     can perform operations on the internal (global) state of the
-    enclave.
+    enclave. We call such adversarial manipulation of internal enclave
+    state as \textit{enclave malleability}.
 
-  \item[Asynchrnonous Exit:] In addition to an \ocall, the processor
+  \item[Asynchronous Exit:] In addition to an \ocall, the processor
     can exit from an enclave due to an interrupt or exception. Such
     enclave exiting events are called Asynchronous Exit Events, or
-    AEX. Unlike an \ocall, an AEX can transfer control from the enlave
+    AEX. Unlike an \ocall, an AEX can transfer control from the enclave
     to the environment at arbitrary (possibly adversary controlled)
     points inside the enclave. Like \ocall s, an AEX can either by
     resumed from where the enclave left off, or the environment can
@@ -294,7 +293,7 @@
 
     Since an adversary can create multiple running copies of an
     enclave and selectively interrupt each enclave to cause and AEX,
-    it can be used as a means to ``rewind'' the internal state of of
+    it can be used as a means to ``rewind'' the internal state of
     the enclave. Given that proof-of-knowledge \cite{BellarePOK}
     protocols fundamentally have a \textit{knowledge-extractor} based
     on rewinding, an enclave must ensure that it does not leak secrets
@@ -311,9 +310,9 @@
   \begin{description}
   \item[Attributes:] The attributes of an enclave act as an access
     control mechanism that is enforced by the hardware. For example,
-    certain high priviledge keys, such as Launch-Key and Provision-Key
+    certain high privilege keys, such as Launch-Key and Provision-Key
     cannot be made accessible to all the enclaves, as it would
-    compromize the security of entire SGX ecosystem---not just a given
+    compromise the security of entire SGX ecosystem---not just a given
     CPU. An enclave author requests the attributes needed by the
     enclave at compiler/sign time, and the Launch-Enclave, based on
     policy decisions, decides whether to grant or reject an
@@ -330,14 +329,14 @@
     be changed post instantiation.
 
   \item[Thread count:] An enclave must also decide upon the number of
-    threads that can run conconrrently. As pointed out in
+    threads that can run concurrently. As pointed out in
     \secref{sec:model}, concurrency can have a dramatically negative
     impact on the security of the certain protocols, and one must not
     select this parameter just on the basis of performance
     requirements, but also on the basis of security concerns.
 
-  \item[Software versioning:] SGX provides elaborate software-upgrade
-    and life-cycle management faciliaties and allows software vendors
+  \item[Software version:] SGX provides elaborate software-upgrade
+    and life-cycle management facilities and allows software vendors
     to make use of these features.
 
   \end{description}
@@ -368,7 +367,7 @@
   capable processor, it must get an authorization token, called
   \textit{Launch Token}, from Intel provided \launchenclave. The
   \launchenclave\ uses a combination of \mrenclave, \mrsigner, the
-  attributes of the enclave and a \textit{whitelist signed by Intel}
+  attributes of the enclave and a \textit{white-list signed by Intel}
   to decide whether to grant Launch Token to the enclave or not. Once
   an enclave obtains a Launch Token, the enclave can continue using it
   indefinitely, even when the policies of the \launchenclave\ might
@@ -408,8 +407,8 @@
     \centering
     \includegraphics[width=\linewidth]{Diagrams/SGXKDF}
     \caption{SGX Key derivation function. Only parameters outside the
-      dotted line can be adversarially chosen. Key derivation uses
-      all-zeros for \mrenclave, \mrsigner, and attributes if keypolicy
+      dotted line can be adversarialy chosen. Key derivation uses
+      all-zeros for \mrenclave, \mrsigner, and attributes if key policy
       doesn't require them. See \cite[\S38.17]{intelsdm} for
       additional details.}
     \label{fig:sgxkdf}
@@ -418,7 +417,7 @@
   \label{fig:keys}
   \end{figure}
 
-  An application software does not have raw acceess to these base
+  An application software does not have raw access to these base
   keys. However, an application can access \textit{named} keys that
   are derived from these two base key (see Figure~\ref{fig:keys}).
   The key derivation function allows enclave author to specify
@@ -444,8 +443,8 @@
   \item[Provisioning Key:] This key is derived from Provisioning Key
     and is used as the root-of-trust between the CPU and the Intel
     Attestation Service during the EPID join process. Since admitting
-    a non-SGX processor to the Intel Attesttion Service's group of SGX
-    processors will completely compromize remote attestation for all
+    a non-SGX processor to the Intel Attestation Service's group of SGX
+    processors will completely compromise remote attestation for all
     CPUs, extreme care must be taken in granting access to
     Provisioning Key. Currently, the \launchenclave\ only grants
     Provisioning Key access to enclaves that have been signed by
@@ -453,24 +452,24 @@
     Provisioning Certification Enclave (\pce) (both created without
     debug option) have access to Provisioning Key.
 
-  \item[Provisioning Seal Key:] This key is derived joinly from Root
+  \item[Provisioning Seal Key:] This key is derived jointly from Root
     Provisioning Key and Root Seal Key. During the EPID join process,
     the EPID private-key for each platform is encrypted with this key
     and uploaded to Intel Attestation Service. (See
     \secref{ssec:epidprov} for details about EPID join process.)
 
     Note that the EPID private-key could not just be encrypted with
-    Provisioning Key as that would destory the EPID's blinded-join
+    Provisioning Key as that would destroy the EPID's blinded-join
     protocol. Conversely, the EPID private-key cannot be encrypted
-    just with Seal Key as that might allow non-priviledged enclaves to
+    just with Seal Key as that might allow non-privileged enclaves to
     have access to EPID private key and thereby render Remote
     Attestation ineffective\footnote{If someone could access EPID
       private key---either directly, or through oracle access---they
       could sign remote attestation queries for \textit{any}
-      platform. Furthermore, because of anonymimity, it will be
-      difficult to determine the platform that was compromized.}.
+      platform. Furthermore, because of anonymity, it will be
+      difficult to determine the platform that was compromised.}.
 
-    In spite of this design choice, given the uncertainity about how
+    In spite of this design choice, given the uncertainty about how
     the Root Seal Key is generated, one should assume that Intel knows
     the EPID private key for each platform.
 
@@ -480,11 +479,11 @@
     order to instantiate an enclave. Only a specific \mrsigner---whose
     corresponding private-keys are only known to Intel---can access
     the Launch Key. In SGXv2, the \mrsigner\ for \launchenclave\ can
-    be changed programatically, (see \cite[\S39.1.4]{intelsdm} for
+    be changed pragmatically, (see \cite[\S39.1.4]{intelsdm} for
     details) and any enclave signed with that \mrsigner\ can gain
     access. With this change, however, it's not clear how Intel
     intends to enforce access control restrictions on the
-    Proviosioning Key.
+    Provisioning Key.
 
   \item[Seal Key:] This key is derived from Root Seal Key and used for
     encrypting data specifically for a given CPU.
@@ -511,7 +510,7 @@
       \centering
       \includegraphics[width=.85\linewidth]{Diagrams/LocalAttestation}
       \caption{Local attestation computation. Parameters outside the
-        dotted line can be adversarially selected.}
+        dotted line can be adversarialy selected.}
       \label{fig:localattestation}
     \end{subfigure}%
     \caption{Local attestation computation and message flow}
@@ -545,10 +544,10 @@
   \textsf{CR\_REPORT\_KEYID} that was used during \te's Report Key
   derivation.
 
-  The verifiation of local attestation involves using \textsf{EGETKEY}
+  The verification of local attestation involves using \textsf{EGETKEY}
   instruction to fetch the \te's Report Key and validating the
   \textsf{CMAC} on Report body in software.  The report body includes
-  \mrsigner, \mrenclave, attributes, and other paramters of the
+  \mrsigner, \mrenclave, attributes, and other parameters of the
   \se. Note that while fetching the report key for verification, the
   \textsf{EGETKEY} will requite the value of
   \textsf{CR\_REPORT\_KEYID} to derive the right Report Key.
@@ -557,7 +556,7 @@
   \label{sec:analysisfwk}
 
   Given the computational model of SGX, we describe certain pitfalls
-  in enclave design that might inadvertantly make the enclave
+  in enclave design that might inadvertently make the enclave
   malleable, or open door for building knowledge-extractors
   \cite{BellarePOK}.
 
@@ -568,14 +567,14 @@
   an \ocall\ or (b) as an AEX. Since it's not required for an
   \ocall\ or AEX to return back to the enclave from the state it left
   off, it's possible for a malicious \env\ to make unexpected \ecall s
-  to alter the internale state of the enclave. Enclaves whose global
+  to alter the internal state of the enclave. Enclaves whose global
   internal state can be influenced by an attacker by not following the
   expected protocol are called \textit{malleable enclaves} in this
   document.
 
   To better understand enclave malleability, consider the following
-  example: The US govenment wants to use an SGX enclave to implement
-  2-man rule for launcing nuclear messiles. The 2-man rule requires
+  example: The US government wants to use an SGX enclave to implement
+  2-man rule for launching nuclear missiles. The 2-man rule requires
   that at least two \textit{different} members (generals) of the armed
   forces must authorize the enclave before it can launch a nuclear
   missile.
@@ -588,7 +587,7 @@
   global variable \texttt{auth\_count}. Since different generals might
   be authorizing the launch at different times, the enclave allows
   each general to authorize a launch individually by signing the
-  concatenation of general's name and some auxilary data.
+  concatenation of general's name and some auxiliary data.
 
   \begin{center}
   \lstset{language=C++,
@@ -649,7 +648,7 @@ int auth_and_launch(const char* const general_name,
     \texttt{auth\_and\_launch} function with the intent of causing an
     AEX between lines 19 and 20. Since the attacker can artificially
     cause an interrupt and also instantiate multiple copies of the
-    enclave in parallel, given a polynimial number of trials (in
+    enclave in parallel, given a polynomial number of trials (in
     program length), the attacker can cause an AEX between line 19 and
     20 W.H.P. Note that at the time of a successful AEX between line
     19 and 20, the \texttt{auth\_count} and \texttt{has\_authorized}
@@ -663,13 +662,13 @@ int auth_and_launch(const char* const general_name,
     makes an \ecall\ to \texttt{auth\_and\_launch} again with the same
     old parameters $\langle g_1, \sigma_1 \rangle$. Since the first
     \ecall\ had incremented the counter, but left the authorization
-    state inconsitent, the second \ecall\ will once again increment
+    state inconsistent, the second \ecall\ will once again increment
     \texttt{auth\_count} leading to a nuclear attack!
 
   \item While not applicable in this case, in some cases it might be
     necessary for an attacker to resume the first \ecall\ after the
     second one has completed. Since the enclave preserves the stack
-    before making an AEX, resuming the first \ecall\ tantamouts to
+    before making an AEX, resuming the first \ecall\ tantamounts to
     executing \textsf{ERESUME} assembly instruction.
 
   \end{enumerate}
@@ -690,8 +689,8 @@ int auth_and_launch(const char* const general_name,
   Normally, the knowledge-extractor from the prover is designed by
   giving a simulator the capability to ``rewind'' the prover's state
   to arbitrary point during it's execution. Since SGX enclaves can be
-  interrupted by an AEX, it's imporant that a malicious \env\ is not
-  able to rewind the enclave in such a way that it inadvertantly
+  interrupted by an AEX, it's important that a malicious \env\ is not
+  able to rewind the enclave in such a way that it inadvertently
   reveals the secret-key.
 
   Consider the three-move---commit, challenge,
@@ -701,21 +700,21 @@ int auth_and_launch(const char* const general_name,
   between a prover and a verifier in mind, and then uses Fiat-Shamir
   \cite{FiatShamir} heuristic\footnote{In the Fiat-Shamir heuristic,
     the prover \textit{pretends} to be a verifier and a random oracle,
-    based on publically known fields of the protocol (such as the
+    based on publicly known fields of the protocol (such as the
     commitment value, user's input message, etc.) generates the
     challenge string.} to convert it into a useful non-interactive
   use-case such as a signature scheme. Most of these protocols just
   require the prover, which in this case will be enclave, to respond
-  to two challenege message for a given commitment message to reveal
+  to two challenge message for a given commitment message to reveal
   the secret.
 
   If an enclave is not implemented appropriately, one can induce an
   artificial AEX right after the commitment phase, and call the
   enclave with different messages in possibly different threads to
   generate two responses to the same commitment message. Note that AEX
-  in conjunction with multithreading opens doors for a limited form of
+  in conjunction with multi-threading opens doors for a limited form of
   enclave rewinding and presents a larger attack surface than AEX
-  alone.  Unless, an enclave requires multithreading, it's wise to set
+  alone.  Unless, an enclave requires multi-threading, it's wise to set
   the number of possible threads to the bare minimum.
 
   \section{SGX remote attestation}
@@ -729,7 +728,7 @@ int auth_and_launch(const char* const general_name,
   simulate any piece of computing hardware, unless there's an inbuilt
   asymmetry between what the software ``knows'' and what the hardware
   knows, it's impossible to prevent software simulator attacks in such
-  systems. On the other hand, each idependent piece of software needs
+  systems. On the other hand, each independent piece of software needs
   to prove on its own that it's running on a real hardware.
   Therefore, each independent software must somehow have direct or
   oracle access to the secret that the hardware is holding. The
@@ -743,11 +742,11 @@ int auth_and_launch(const char* const general_name,
   In case of Intel SGX, the question of knowledge-asymmetry between
   hardware and software is answered by the Root Provisioning Key (see
   \secref{ssec:platkeys}). The dilemma of both denying as well as
-  granting access to this hardware secret is soved by a two-step
+  granting access to this hardware secret is solved by a two-step
   process:
 
   \begin{enumerate}
-    \item Intel has created a (set of) priviledged enclaves---called
+    \item Intel has created a (set of) privileged enclaves---called
       \textsf{Provisioning Enclave} (\pve) and \textsf{Provisioning
         Certification Enclave} (\pce)\footnote{Intel addresses these
         enclaves by their acronyms, \pve\ and \pce, only. The
@@ -767,7 +766,7 @@ int auth_and_launch(const char* const general_name,
       Intel signed enclave called \textsf{Quoting Enclave} (\qe) is
       given raw access to EPID keys and made responsible for
       generating remote-attestation results on behalf of other
-      arbirary--potentially malicious---enclaves.
+      arbitrary--potentially malicious---enclaves.
 
       To compute remote attestation, an arbitrary enclave first
       generates a local attestation with \textsf{Quoting Enclave} as
@@ -776,7 +775,7 @@ int auth_and_launch(const char* const general_name,
       report and subsequently uses EPID key to sign all the parameters
       it validated during local attestation. Since local-attestation
       uses the hardware resident identity of the enclave (i.e.,
-      \mrenclave, \mrsigner, and enclave attributes), which canot be
+      \mrenclave, \mrsigner, and enclave attributes), which cannot be
       forged (see \secref{ssec:localatt}), the remote-attestation
       result on the enclave identity cannot be forged
       either. Furthermore, since arbitrary software never has direct
@@ -785,40 +784,15 @@ int auth_and_launch(const char* const general_name,
       is a valid enclave are also thwarted.
   \end{enumerate}
 
-  Remote attestation is a crucial component in the overall design of
-  SGX platform. While local-attestation (see \secref{ssec:localatt})
-  uses a MAC (CMAC), whose properties are well-known and widely
-  studied, SGX remote-attestation is based on a Group Signature Scheme
-  \cite{ChaumGroupSignatures} called Enhanced Privay ID
-  (EPID)\footnote{Unfortunately, the way Intel has implemented remote
-    attestation, this statement is only partially correct. While the
-    underlying scheme is based on EPID, the quoting enclave---which is
-    responsible for generating the group signature also
-    \textit{encrypts each signature} with an authenticated public-key!
-    Since no-one apart from Intel can decryt these signatures, no
-    one---not even those with access to Group Public-Key--can validate
-    these signatures.} \cite{epid}. Even though group signatures have
-  been studied for a long time \cite{camenischLysyankaya,
-    coalitionresistant, BMW03, dynamicGroupSignatures}, it wasn't
-  until the Trusted Computing Group decided to use Direct Anonymous
-  Attestation (DAA) \cite{daa} that they became widely used. In spite
-  of this long history, until very recently DAA was known to have
-  well-known, serious, real-world \cite{tpmDHOracle}, cryptographic
-  flaws \cite{daaproblems} in widely deployed systems. It's only
-  recently that a unified security model has been proposed
-  \cite{ucdaa} and proven correct in \uc\ framework. It's therefore
-  crucial to analyze EPID as a signature scheme as well as Intel's
-  implementation to have confidence in the remote attestation
-  mechanism.
-
   The rest of this section is organized as follows: \secref{ssec:epid}
-  provides a bird's eye view of Group Signatures and EPID security
-  model. Readers faimilar with Group Signatures, EPID, or DAA can
-  safely skip this sub-section. \secref{ssec:pairings} provides
-  implementation details about the Pairings Group used by Intel's
-  \textsf{Provisioning Enclave} and \textsf{Quoting
-    Enclave}. \secref{ssec:epidprov} provides detailed information on
-  how the \textsf{Provisioning Enclave} joins the Intel SGX EPID
+  provides an overview of EPID and how it's has been implemented by
+  Intel. Since the official \cite{epid} paper leaves several details
+  out (e.g., the Zero-Knowledge proof of ineqauality for singature
+  based revocation is left out from the paper), the goal of this
+  section to fill in those gaps based on \textsf{Provisioning Enclave}
+  and \texttt{epid-sdk} open source implementation
+  \cite{epidsdk}. \secref{ssec:epidprov} provides detailed information
+  on how the \textsf{Provisioning Enclave} joins the SGX EPID
   group. Finally, \secref{ssec:qe} provides details about
   \textsf{Quoting Enclave} and how SGX remote attestation should be
   validated against Intel Attestation Service.
@@ -835,17 +809,113 @@ int auth_and_launch(const char* const general_name,
   destroy the anonymity and privacy of the person using that device.
 
   Group Signatures were introduced by Chaum and Van Heyst
-  \cite{ChaumGroupSignatures} as a means to preserve the
-  unforgeability and non-repudiation (in case of a dispute) of a
-  standard signature scheme, without compromizing the anonymity of the
-  signer. 
+  \cite{ChaumGroupSignatures} as a means to address this. Their idea
+  was to create a signature-scheme where a single ``group
+  public-key,'' can verify messages signed by different private
+  keys. In addition to anonymity, several additional requirements were
+  later on added to this list to different use cases.
 
-  \cite{bbs}
-  \cite{bbsplus}
-  \cite{concurrentJoinGroupSignatures}
+  The literature on group signature schemes is huge, both for formal
+  models of its security
+  \cite{BMW03,dynamicGroupSignatures,fulldynamicgroupsignature} as
+  well as for different constructions \cite{bbs, Furukawa2005,
+    coalitionresistant, camenischLysyankaya} based on different
+  computational assumptions. From a practical deployment perspective,
+  Direct Anonymous Attestation \cite{daa, ucdaa} (DAA) is closest to
+  EPID and also most widely deployed.
 
-  \subsection{SGX Pairing Groups}
-  \label{ssec:pairings}
+
+  In EPID, there are four entities:
+
+  \begin{description}
+  \item [Issuer ($\mathcal{I}$):] It's the entity that decides who
+    should be part of a given EPID group. In case of SGX, the Intel
+    Attestation Service acts as the issuer. Its goal is to dynamically
+    (i.e., one-by-one) add new SGX Processors as they come
+    on-line. Group signature schemes do no define what credentials one
+    must possess before they can be admitted to given group. However,
+    for group signatures to be meaningful, some form of out-of-band
+    mechanism must decide group membership criteria. In case of SGX,
+    the Intel Attestation Service uses knowledge of Root Provisioning
+    Key as the deciding factor on who should join the SGX Processor
+    group (see \secref{ssec:epidprov}).
+
+  \item[Revocation Manager ($\mathcal{R}$):] Unlike standard signature
+    schemes, where revocation only includes the public-key of the
+    revoked private-key, group signatures require a different
+    approach. EPID has two forms of revocation:
+
+    \begin{itemize}
+    \item Private-key based revocation list, called \texttt{Priv-RL},
+      which is a list of all the compromized \textit{private-keys}
+      known to Revocation Manager. EPID does not support
+      full-anonymity\footnote{In the \textsf{anonymity} game of
+        \cite{BMW03}, the adversary gets the private key of all the
+        members, and yet cannot distinguish one signer from another
+        based on signatures alone.} in the sense of \cite{BMW03}, and
+      putting a private key in \texttt{Priv-RL}, completely destroys
+      the anonymity of the signer.
+      \item Signature based revocation, called \texttt{Sig-RL}, which
+        is a list of message, signature pairs $\langle m_i, \sigma_i
+        \rangle$ that the Revocation Manager believes to have been
+        created by a fraduent signer. Signature based revocation is an
+        alternative to tracebility found in most group signature
+        schemes.
+    \end{itemize}
+
+    In EPID, a signer needs to have access to the most up-to-date
+    \texttt{Sig-RL} to generate a valid signature. This is
+    fundamentally different from \textit{verifier local revocation}
+    (VLR) \cite{BonehVLR} where the signer never needs up-to-date
+    revocation list to generate a valid signature. Also, unlike
+    verifier local signatures, EPID signatures are of variable length
+    and even same message signed with the same private-key can have
+    different lengths depending upon the length of
+    \texttt{Sig-RL}. It's surprising that such a signature scheme is
+    can still be anonymous!
+
+    \item[Platforms ($\mathcal{P}$):] Platforms in EPID are entities
+      that are part of the signing group. In case of SGX, each SGX
+      capable CPU SoC is a platform. Note that the issuer is not part
+      of the Platform, and cannot create valid signatures on behalf of
+      the group.
+
+      Platforms generate their private key (essentially a group
+      element in $\mathbb{F}_p^{\times}$) using a private-coin
+      protocol. Through a \textit{blinded join} process, the Issuer
+      grants a ``certificate'' on Platform's private key, which
+      includes the group's identity as well as group
+      public-key. Together, the Issuer certficate and Platform's
+      private key form the platform signing key. In case of SGX, the
+      Proviosioning Enclave is responsible for joining the SGX EPID
+      group. Once Provisioning Enclave has obtained a siging key from
+      Intel Attestation Service, it stores this key on non-volatile
+      storage encryped with Seal-Key that has been diversified using
+      the \mrsigner\ of \pve. Since Intel is the \mrsigner\ of \pve,
+      only Intel Signed enclave can access the EPID signing key.
+
+      In order to sign a message, a platform needs access to its
+      signing key and the recent most \texttt{Sig-Rl}.
+
+    \item [Verifiers ($\mathcal{V}$):] Any entity in possession of the
+      Group public-key is a verifier. In case of Intel Attestation
+      Service, however, each signature is encrypted by the
+      \textsf{Quoting Enclave} using an authenticated public-key in
+      the enclave. The motivation for this is unclear, and currently
+      only Intel Attestation Service can verify signatures.
+
+      Note that not having the ability to verify signatures locally
+      means that one must trust Intel Attestation Service with the
+      validity of the signature. If Intel, for what ever reason,
+      chooses to lie about the validity of a signature, it could
+      completely compromize the security of the system.
+  \end{description}
+
+  Because of space and time constraints, we intentionally leave out
+  additional details about EPID in the rest of the document. Since the
+  EPID paper leaves out details about zero-knowledge proof of
+  inequality of two discrete logs, we point that the SGX
+  implementation uses \cite[\S6]{ShoupVFE} verbatim to achieve this.
 
   \subsection{SGX EPID provisioning}
   \label{ssec:epidprov}
@@ -853,8 +923,7 @@ int auth_and_launch(const char* const general_name,
   \begin{figure}
   \centering
   \includegraphics[width=0.8\linewidth]{Diagrams/EpidProvisioning}
-  \caption{Local attestation computation. Parameters outside the
-    dotted line can be adversarially selected.}
+  \caption{EPID Provisioning}
   \label{fig:epidprov}
   \end{figure}
 
