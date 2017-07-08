@@ -29,7 +29,6 @@
 \tikzset{>=latex}
 
 \newcommand{\secref}[1]{\S\ref{#1}}
-
 \newcommand{\lastupdate}{\today}
 \newcommand{\ie}{\textit{i.e.}}
 \newcommand{\mdash}{---}
@@ -914,12 +913,12 @@ int auth_and_launch(const char* const general_name,
   Because of space and time constraints, we intentionally leave out
   additional details about EPID in the rest of the document. Since the
   EPID paper leaves out details about zero-knowledge proof of
-  inequality of two discrete logs, we point that the SGX
-  implementation uses \cite[\S6]{ShoupVFE} verbatim to achieve this.
+  inequality of two discrete logs to make use of \texttt{Sig-RL}, we
+  point that the SGX implementation uses \cite[\S6]{ShoupVFE} verbatim
+  to achieve this.
 
   \subsection{SGX EPID provisioning}
   \label{ssec:epidprov}
-
   \begin{figure}
   \centering
   \includegraphics[width=0.8\linewidth]{Diagrams/EpidProvisioning}
@@ -927,13 +926,41 @@ int auth_and_launch(const char* const general_name,
   \label{fig:epidprov}
   \end{figure}
 
-  \subsection{SGX Quoting Enclave and Quote Validation}
-  \label{ssec:qe}
+  As described in \secref{sec:remoteatt}, each SGX capable processor
+  has a unique Provisioning Key that's also known to Intel Attestation
+  Service. In theory, one could use this key as the private key (the
+  $\gamma$ in \cite{epid}) for EPID signatures. There are two problems
+  with this: First a compromise of this key would render the CPU
+  useless in-perpetuity. But more importantly, since EPID does not
+  have full-anonymity and Intel knows this key, the scheme will lose
+  anonymity.
 
-  \section{Conclusion}
-  \label{sec:conclusion}
+  In order to create new set of EPID credentials, the SGX capable
+  processor must participate in the EPID Join processor. When preseted
+  with a join request, the Intel Attestation Service must somehow
+  ensure that the join request indeed came from an SGX processor;
+  allowing non-SGX platforms to join SGX EPID group would render the
+  entire remote attestation scheme useless. To make matters worse,
+  under concurrent composition, the Zero-Knowledge Proof of Knowledge
+  Protocol used in the EPID Join request is not secure, and the entity
+  making the Join request (namely, \pve) must somehow ensure
+  sequential execution.
 
+  Intel has addressed these issues by creating two Intel signed
+  enclaves called \pve\ and \pce\footnote{While we not sure why the
+    provisioning process was split into two seperate enclave with the
+    same set of privileges, we belive this is done to seperate the
+    enclave that directly interacts with network data (\pve) from the
+    one that only signs (certifies) messages.}. Both these enclaves
+  have access to the Provisioning Key, and the \mrsigner\ for these
+  enclaves is hardcoded in the \textsf{Launch Enclave}---preventing
+  non-Intel enclaves from gaining access to the Provisioning Key.
+
+  Figure~\ref{ssec:epidprov} describes the details about EPID
+  provisioning.
+
+  \subsection{SGX EPID Quotes and Verification}
+ 
 \bibliographystyle{alpha}
 \bibliography{sgx_biblio}
-
 \end{document}
