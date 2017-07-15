@@ -613,28 +613,39 @@
     morecomment=[l][\color{magenta}]{\#} }
   \begin{lstlisting}[captionpos=b,
                      caption={An enclave suseptible to state
-                       malleability}, label=code:malleability] /*
-    count of generals who have authorized launch. */ static int
-    auth_count = 0;
+                       malleability}, label=code:malleability] 
+/* count of generals who have authorized launch. */ 
+static int auth_count = 0;
 
-/* hardcoded list of generals and their PKs */ struct general_info{
-  char general_name[256]; const sgx_ec256_public_t general_pub; bool
-  has_authorized; // initialized to false }GENERALS[] = { ... };
+/* hardcoded list of generals and their PKs */ 
+struct general_info{
+  char general_name[256]; 
+  const sgx_ec256_public_t general_pub; 
+  bool has_authorized; // initialized to false 
+}GENERALS[] = { ... };
 
-/* ecall made by each general with a sig on name + aux data */ int
-auth_and_launch(const char* const general_name, const
-sgx_ec256_signature_t* sig){ struct general_info* valid_general =
-  validate_general(general_name, sig);
+/* ecall made by each general with a sig on name + aux data */ 
+int auth_and_launch(const char* const general_name, 
+                    const sgx_ec256_signature_t* sig){ 
+
+  struct general_info* valid_general = 
+          validate_general(general_name, sig);
 
   if(!valid_general){ return INVALID_GENERAL; }
 
-  if(!valid_general->has_authorized){ auth_count++; // \aex\ here will
-    be devastating!  valid_general->has_authorized = true; }else{
-    return GENERAL_ALREADY_AUTHORIZED_ACTION; // replay }
+  if(!valid_general->has_authorized){ 
+    auth_count++; // AES here will be devastating!  
+    valid_general->has_authorized = true; 
+  }else{
+    return GENERAL_ALREADY_AUTHORIZED_ACTION; // replay 
+  }
 
-  if(auth_count == 2){ return nuke_the_kashbah(location); }
+  if(auth_count == 2){ 
+    return nuke_the_kashbah(location); 
+  }
 
-  return PENDING_AUTHORIZATION; }
+  return PENDING_AUTHORIZATION; 
+}
 \end{lstlisting}
 \end{center}
 
@@ -1508,7 +1519,7 @@ sgx_ec256_signature_t* sig){ struct general_info* valid_general =
   verification, the \textsf{EGETKEY} will require the value of
   \textsf{CR\_REPORT\_KEYID} to derive the right \rk.
 
-  \section{Enclave malleability and Knowledge Extractors}
+  \section{Enclave Malleability and Knowledge Extractors}
   \label{sec:analysisfwk}
 
   Given the computational model of SGX, we describe certain pitfalls
@@ -1516,7 +1527,7 @@ sgx_ec256_signature_t* sig){ struct general_info* valid_general =
   malleable, or open door for building knowledge-extractors
   \cite{BellarePOK}.
 
-  \subsection{Enclave malleability}
+  \subsection{Enclave Malleability}
   \label{ssec:malleability}
   As described in \secref{sec:model}, an application can exit an
   enclave either via (a) as a function return from an \ecall\ (b) as
