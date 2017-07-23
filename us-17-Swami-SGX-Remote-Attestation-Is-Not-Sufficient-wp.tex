@@ -1,4 +1,5 @@
 \documentclass[letterpaper]{article}
+\usepackage[sc]{mathpazo}
 \usepackage{cite}
 \usepackage{amsfonts}
 \usepackage{fancyhdr}
@@ -1776,6 +1777,15 @@ sgx_ec256_signature_t* sig){ struct general_info* valid_general =
   Direct Anonymous Attestation \cite{daa, ucdaa} (DAA) is closest to
   EPID and also most widely deployed.
 
+  \subsection{SGX EPID provisioning}
+  \label{ssec:epidprov}
+  \begin{figure}
+  \centering
+  \includegraphics[width=0.8\linewidth]{Diagrams/EpidProvisioning}
+  \caption{EPID Provisioning}
+  \label{fig:epidprov}
+  \end{figure}
+
 
   In EPID, there are four entities:
 
@@ -1870,15 +1880,6 @@ sgx_ec256_signature_t* sig){ struct general_info* valid_general =
   inequality of two discrete logs to make use of \texttt{Sig-RL}, we
   point that the SGX implementation uses \cite[\S6]{ShoupVFE} verbatim
   to achieve this.
-
-  \subsection{SGX EPID provisioning}
-  \label{ssec:epidprov}
-  \begin{figure}
-  \centering
-  \includegraphics[width=0.8\linewidth]{Diagrams/EpidProvisioning}
-  \caption{EPID Provisioning}
-  \label{fig:epidprov}
-  \end{figure}
 
   As described in \secref{sec:remoteatt}, each SGX capable processor
   has a unique Provisioning Key that's also known to Intel Attestation
