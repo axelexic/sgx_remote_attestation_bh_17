@@ -84,9 +84,9 @@
   (b) concurrent-composition, and (c) enclave state malleability that
   must be taken into account while designing new enclaves. We analyze
   Intel provided EPID \cite{epid} \textsf{Provisioning} and
-  \textsf{Quoting} enclave \cite{sgxattest} within this framework and
-  report our (largely positive) findings. We also provide details
-  about SGX's use of EPID and report (largely negative) results about
+  \textsf{Quoting} enclave \cite{sgxattest} and report our (largely
+  positive) findings. We also provide details about how SGX uses of
+  EPID Group Signatures and report (largely negative) results about
   claimed anonymity guarantees.
 
 \end{abstract}
@@ -95,7 +95,7 @@
 \label{sec:intro}
   Intel SGX enclaves\cite{sgxinnov, sgxinnov2} provide hardware
   enforced confidentiality and integrity guarantees for running pure
-  computation (\textit{i.e.}, OS-level side-effect-free code) in the
+  computation (i.e., OS-level side-effect-free code) in the
   cloud environment. By limiting the application's Trusted Computing
   Base (TCB) to the CPU and CPU-Cache, SGX provides unprecedented
   confidentiality and integrity guarantees against malicious OS
@@ -116,8 +116,8 @@
       non-cryptographic protocols in ad-hoc ways to implement the
       desired algorithm. For example, the enclave may need to read
       encrypted keys from disk, compute a signature based on that key,
-      create a new set of keys, etc.
-    \item[Step-3:] Finally, define a ``run-time workflow," where one
+      create a new set of keys, log commitments of internal data, etc.
+    \item[Step-3:] Finally, define a ``run-time workflow,'' where one
       first validates the remote-attestation result, and then runs the
       algorithm implemented by the enclave. This step often requires
       multiple interactions with various other entities such as other
@@ -126,9 +126,9 @@
   \end{description}
 
   It's hard to argue against the simplicity and ease of implementation
-  of such a modular software design. However, as pointed out in
-  \cite{ucframework, cramerthesis}, unless a protocol is designed for
-  ``\textsf{Universal Composition}" (\uc)---where, the real-world
+  of such a modular software design. However, it's well known
+  \cite{ucframework, cramerthesis} that unless a protocol is designed
+  for ``\textsf{Universal Composition}'' (\uc)---where, the real-world
   behavior and the ideal-world definition (function) of a protocol are
   computationally indistinguishable \textit{for every} adversary
   controlled environment---it's unlikely that arbitrary composition of
@@ -174,8 +174,8 @@
     nonce, followed by executing an arbitrary mix of commands as
     required by the use-case. Long-term keys are stored as
     GCM-encrypted AEAD blobs. The nonce (a 32-bit counter zero-padded
-    on the left to 96-bit) for each GCM record is stored in TPM, and
-    the TPM returns a signature on the nonce (along with some
+    on the left to 96-bits) for each GCM record is stored in TPM. The
+    the TPM returns a signature on the nonce---along with some
     additional data---to disable roll-back of TPM ``ticks.'' The
     enclave validates the TPM's signature before using the nonce for
     sealing.}
@@ -189,15 +189,15 @@
   attestation queries, but then emulate the rest of the protocol
   (including \textsf{KeyGen} and CSR) outside of the enclave. While
   this is obvious in this simplified example, in a more complicated
-  scenario, where multiple enclaves are interacting with each other,
+  scenario, where multiple enclaves need to interact with each other,
   it might not be obvious if certain sub-components of the protocol
   can be simulated outside. Even though the entire enclave is
-  \textit{sequentially composed} from potentially provably-secure
-  protocols, the combined protocol is completely insecure.
+  \textit{sequentially composed} from provably-secure protocols, the
+  combined protocol is completely insecure!
 
   Second, consider the seal protocol. Here each record (see
   Figure~\ref{fig:sealprotocol}) is GCM-encrypted using a nonce
-  generated and signed by a TPM. However, consider a cloud service
+  generated and signed by the TPM. However, consider a cloud service
   provider who instantiates two copies of the same enclave and
   \textit{concurrently} executes \textsf{KeyGen} using the same TPM
   signed counter. In this case, each enclave will generate two
@@ -205,7 +205,7 @@
   two concurrent instances will each correctly verify the signature
   (the two enclaves are identical), each will end up using the same
   nonce with different underlying data! As is the case with all
-  counter modes, reusing the nonce can completely destroy the security
+  counter modes, reusing a nonce can completely destroy the security
   of the system\footnote{In the present case, since the underlying
     data is uniformly distributed, at least for AES or ECDSA keys,
     such a concurrent composition might not be harmful. However, if
@@ -224,19 +224,19 @@
   While these examples describe a totally broken scheme, in practice
   sequential and concurrent composition may not completely break the
   system as above. Rather it might just weaken the \textit{bounds} of
-  the entire protocol making it easy for further crypt-analysis. For
-  example, consider a scheme that consists of to two protocols $\pi_1$
-  and $\pi_2$, where the adversary needs $2^{t_1}$ and $2^{t_2}$
-  oracle queries to break $\pi_1$ and $\pi_2$ respectively. However,
-  its possible that when composed sequentially as $(\pi_1 \circ
-  \pi_2)$ or $(\pi_2 \circ \pi_1)$ the number of queries needed to
-  break the composed protocol is smaller than
-  $2^{\min\{t_1,t_2\}}$. In fact, since protocol composition rarely
-  commutes, even different order of composition might result in very
-  different bounds\footnote{Readers familiar with
+  the entire protocol making it easy for further crypt-analysis or
+  partial simulation of the enclave's protocol. For example, consider
+  a scheme that consists of to two protocols $\pi_1$ and $\pi_2$,
+  where the adversary needs $2^{t_1}$ and $2^{t_2}$ oracle queries to
+  break $\pi_1$ and $\pi_2$ respectively. However, its possible that
+  when composed sequentially as $(\pi_1 \circ \pi_2)$ or $(\pi_2 \circ
+  \pi_1)$ the number of queries needed to break the composed protocol
+  is smaller than $2^{\min\{t_1,t_2\}}$. In fact, since protocol
+  composition rarely commutes, even different order of composition
+  might result in very different bounds\footnote{Readers familiar with
     \textsf{encrypt-then-mac} vs.  \textsf{mac-then-encrypt} debate
     should require no further explanation.}.
-  
+
   To summarize, \textit{an enclave is a protocol} composed of several
   sub-protocols. In order for the enclave to be secure, it's essential
   that sequential and concurrent composition of sub-protocols remain
@@ -277,12 +277,13 @@
     directly shared with the enclave. An \ecall\ can terminate in one
     of the three ways: (a) by returning normally as a function from
     the enclave, (b) by making an explicit \ocall, or (c) as the
-    result of an interrupt or exception.
+    result of an interrupt or exception. An \ecall\ cannot halt all by
+    itself.
 
     SGX also supports multi-threading, and it's possible for the
     \env\ to run the same \ecall\ in different threads. However, once
     an \ecall\ has acquired the thread, future attempts to reuse that
-    same thread will result in error. Further more, the number of
+    same thread will result in error. Furthermore, the number of
     threads that an enclave can support is pre-determined by the
     enclave signer, and cannot be altered at runtime.
 
@@ -300,7 +301,7 @@
     adversary, one should not expect the \env\ to follow the protocol
     that enclave author had envisioned. In particular, it's possible
     to create a chain of \ecall s and \ocall s such that the adversary
-    can perform operations on the internal (global) state of the
+    can perform operations on the (global) internal state of the
     enclave. We call such adversarial manipulation of internal enclave
     state as \textit{enclave malleability}.
 
@@ -315,7 +316,7 @@
     \ecall\ (either within the same thread or a different thread).
 
     Since an adversary can create multiple running copies of an
-    enclave and selectively interrupt each enclave to cause and \aex,
+    enclave and selectively interrupt each enclave to cause an \aex,
     it can be used as a means to ``rewind'' the internal state of the
     enclave. Given that proof-of-knowledge \cite{BellarePOK} protocols
     fundamentally have a \textit{knowledge-extractor} based on
@@ -335,7 +336,7 @@
     access control mechanism that is enforced by the hardware. For
     example, certain high privilege keys, such as \lk\ and
     \textsf{Provisioning Key}, cannot be made accessible to all the
-    enclaves, as it would compromise the security of entire SGX
+    enclaves as it would compromise the security of entire SGX
     ecosystem. In order to gain access to these keys, an enclave
     author must explicitly request for these attributes at
     compile/sign time. During enclave launch-time, the \launchenclave,
@@ -387,19 +388,20 @@
   A properly signed enclave can be instantiated on any Intel SGX
   Processor---subject to access control restrictions enforced by
   \launchenclave. Before an enclave can be instantiated on an SGX
-  capable processor, it must get an authorization token, called
+  capable processor, it must first get an authorization token, called
   \textsf{Launch Token}, from Intel provided \launchenclave. The
   \launchenclave\ uses a combination of \mrenclave, \mrsigner, the
   attributes of the enclave and a \textit{white-list signed by Intel}
-  to decide whether to grant \textsf{Launch Token} to the enclave or
-  not. Once an enclave obtains a \textsf{Launch Token}, the enclave
-  can continue using it indefinitely, even when the policies of the
-  \launchenclave\ might get updated later on.
+  to decide whether to grant \textsf{Launch Token} or not. Once an
+  enclave obtains a \textsf{Launch Token}, it can continue
+  using it indefinitely---even when the policies of the
+  \launchenclave\ might get updated later on and deny access to
+  \textsf{Launch Token} for that enclave!
 
   \subsection{SGX Platform Keys}
   \label{ssec:platkeys}
 
-  As described in \cite{sgxattest}, each Intel SGX capable processor
+  As described in \cite{sgxattest}, each SGX capable processor
   contains two statistically independent base keys: \rpk\ and \rsk.
   The \rpk\ is used as the \textit{root-of-trust} between the CPU and
   Intel Attestation Services (IAS) \cite{ias}. Intel retains a copy of
@@ -409,10 +411,10 @@
   this key is generated inside the processor via oracle access (\ie,
   in such a way that CPU generates the key all by itself using it's
   own internal random numbers or with PUFs), or whether the key is
-  first generated outside the processor, then injected into CPU, and
-  finally all outside references destroyed. Unless these keys are
-  generated via oracle access, one should consider \rsk\ to be known
-  to Intel.
+  first generated outside the processor, then injected into the CPU,
+  and finally the outside references are destroyed. Unless these keys
+  are generated via oracle access, one should consider \rsk\ to be
+  known to Intel.
 
   \begin{figure}
   \centering
@@ -438,52 +440,55 @@
   \label{fig:keys}
   \end{figure}
 
-  An application software does not have raw access to these base
-  keys. However, an application can access \textit{named} keys that
-  are derived from these two base key (see Figure~\ref{fig:keys}).
-  The key derivation function allows enclave author to specify
-  policies on how to derive enclave specific keys from base
-  keys. These policies allow enclaves to use the \mrenclave,
-  \mrsigner\ and/or attributes from the trusted CPU cache to derive
-  keys. An implication of this design is that enclaves cannot derive
-  keys that might belong to a different enclave. Also note that when
-  key derivation policy does not require specific field such as
-  \mrenclave\ to be used, a default value of all-zeros is
-  used. Therefore, even when ``raw'' named keys are available that
-  have not been specialized for any particular enclave, it's not
-  possible to derive specialized keys from the raw key. For example,
-  one can obtain the raw \sk\ that is neither tied to \mrenclave\ or
-  \mrsigner\ of any enclave, and yet it's not possible to derive
-  enclave-specific \sk\ from the raw \sk.
+  By design, an application software does not have raw access to the
+  base keys. However, an application can access \textit{named} keys
+  that are derived from these two base keys (see
+  Figure~\ref{fig:keys}).  The key derivation function allows enclave
+  authors to specify policies on how to derive enclave specific keys
+  from base keys. These policies include using the CPU resident (\ie,
+  trusted) values of \mrenclave, \mrsigner\ and/or attributes of the
+  enclave.
 
-  The following list describes user accessible keys and their intended
+  An implication of this design is that enclaves cannot derive keys
+  that might belong to a different enclave's \mrenclave\ or
+  \mrsigner. Furthermore, when key derivation policy allows skipping
+  specific fields (such as \mrenclave), a default value of all-zeros
+  is automatically used. Therefore, even when such un-specialized keys
+  are available, it's not possible to derive specialized keys from
+  them.
+
+  \textbf{Remark}: While it's possible to access some keys (e.g., \sk)
+  that have neither been specialized with \mrenclave\ nor \mrsigner,
+  such keys \textit{should not} be used: An attacker can create a
+  standalone enclave that also does not specialize the key in anyway
+  and come to the same value. We consider this to be a design flaw in
+  SGX.
+
+  The following list describes all the named keys and their intended
   usage:
 
   \begin{description}
-  \item[\pk:] This key is derived from \rpk\ and is used as a software
-    version dependent root-of-trust between Intel Attestation Service
-    and SGX capable processor. Since admitting a non-SGX processor to
-    the Intel Attestation Service's group of SGX processors will
-    completely compromise remote attestation for all CPUs, extreme
-    care must be taken in granting access to Provisioning
-    Key. Currently, the \launchenclave\ only grants Provisioning Key
-    access to enclaves that have been signed by Intel. Furthermore,
-    only \textsf{Provisioning Enclave} (\pve) and Provisioning
-    Certification Enclave (\pce) (both created without debug option)
-    have access to this key.
+  \item[\pk:] This key is derived from \rpk\ and is used as a version
+    dependent root-of-trust between Intel Attestation Service and SGX
+    capable processor. Since admitting a non-SGX processor to the the
+    EPID group of SGX processors will completely compromise remote
+    attestation for all CPUs, extreme care must be taken in granting
+    access to \pk. Currently, the \launchenclave\ only grants access
+    to this key if the enclave was signed by Intel. (Intel's
+    \mrsigner\ is hardcoded into the \textsf{Launch Enclave} and this
+    policy enforcement cannot be circumvented.)
 
-  \item[\psk:] This key is derived jointly from Root Provisioning Key
-    and Root Seal Key. During the EPID join process, the EPID
-    private-key for each platform is encrypted with this key and
-    uploaded to Intel Attestation Service. (See \secref{ssec:epidprov}
-    for details about EPID join process.)
+  \item[\psk:] This key is derived jointly from \rpk\ and \rsk. During
+    the EPID join process, the EPID private-key for each platform is
+    encrypted with this key and uploaded to Intel Attestation
+    Service. (See \secref{ssec:epidprov} for details about EPID join
+    process.)
 
     Note that the EPID private-key could not just be encrypted with
     \pk\ as that would destroy the EPID's blinded-join
     protocol. Conversely, the EPID private-key cannot be encrypted
     just with \sk\ as that might allow non-privileged enclaves to have
-    access to EPID private key and thereby render Remote Attestation
-    ineffective.
+    access to EPID private key.
 
     In spite of this design choice, given the uncertainty about how
     the \rsk\ is generated, one should assume that Intel knows the
@@ -491,16 +496,24 @@
 
   \item[\lk:] This key is derived from \rsk\ and is used by
     \launchenclave\ to create authorization tokens
-    (\textsf{EINITTOKEN}) that each non-Intel enclave must obtain in
-    order to instantiate an enclave. Only a specific \mrsigner---whose
-    corresponding private-keys are only known to Intel---can access
-    the \lk. In SGXv2, the \mrsigner\ for \launchenclave\ can be
-    changed pragmatically, (see \cite[\S39.1.4]{intelsdm}) but it's
-    not clear how Intel intends to enforce access control restrictions
-    on \pk.
+    (\textsf{EINITTOKEN}). Recall that each non-Intel enclave must
+    obtain this authorization token before the CPU can instantiate the
+    enclave. Only a specific \mrsigner---whose corresponding
+    private-keys are only known to Intel---can access the \lk. In
+    SGXv2, the \mrsigner\ for \launchenclave\ can be changed
+    programmatically \cite[\S39.1.4]{intelsdm}, but it's not clear how
+    Intel intends to enforce access control restrictions on \pk.
+
+    \textbf{Remark}: It's unclear why \lk\ needs to be derived from a
+    long-term secret (\rsk). An ephimeral \lk\ generated at the
+    processor boot-up would not only be more secure, but also enable
+    better policy enforcement by \textsf{Launch Enclave}.
 
   \item[\sk:] This key is derived from \rsk\ and used for encrypting
-    data specifically for a given CPU.
+    data specifically for a given CPU. As we remarked earlier, one
+    must not use un-specialized \sk---either for encrytion or
+    authentication---as that would completely compromize the security
+    of that enclave.
 
   \item[\rk:] This key is derived from \rsk\ and used for Local
     Attestation (see \secref{ssec:localatt} for detailed information
@@ -523,7 +536,7 @@
       \centering
       \includegraphics[width=.85\linewidth]{Diagrams/LocalAttestation}
       \caption{Local attestation computation. Parameters outside the
-        dotted line can be adversarialy selected.}
+        dotted line can be adversarially selected.}
       \label{fig:localattestation}
     \end{subfigure}%
     \caption{Local attestation computation and message flow}
@@ -540,38 +553,38 @@
 
   The process of local-attestation involves computing CMAC
   \cite{aescmac} on the \se's identity (i.e., \mrenclave, \mrsigner,
-  etc.) using the \te's Report Key. However, as pointed out in
-  \secref{ssec:platkeys}, the \se\ cannot directly access \te's Report
-  Key. SGX solves this problem by providing \textit{oracle access} to
-  \te's Report Key via \textsf{EREPORT} instruction
+  etc.) using the \te's \rk. However, as pointed out in
+  \secref{ssec:platkeys}, the \se\ cannot directly access \te's
+  \rk. SGX solves this problem by providing \textit{oracle access} to
+  \te's \rk\ via \textsf{EREPORT} instruction
   \cite[\S14.4.1]{intelsdm}.
-  
+
   To compute local attestation, the \se\ obtains the \mrenclave\ and
   attributes of the \te\ through some out-of-band mechanism (which
   might be adversarial). Based on \te's \mrenclave, the
-  \textsf{EREPORT} instruction internally derives the \te's Report Key
-  and computes \textsf{CMAC} on \se's \mrenclave, \mrsigner, and
-  attributes from the trusted CPU cache (and optionally untrusted user
-  data).  The \textsf{EREPORT} instruction also uses a boot-time
-  random number called \textsf{CR\_REPORT\_KEYID} to diversify the
-  \te's Report Key before \textsf{CMAC} computation. The
-  \textsf{EREPORT} instruction also returns the value of
-  \textsf{CR\_REPORT\_KEYID} that was used during \te's Report Key
-  derivation.
+  \textsf{EREPORT} instruction internally derives the \te's \rk\ and
+  computes \textsf{CMAC} on \se's identity: \mrenclave, \mrsigner, and
+  attributes. To prevent malicious enclaves from forging their
+  identity, the CPU's internal trusted cache is used for computing
+  \se's identity. During \te's key derivation, the \textsf{EREPORT}
+  instruction uses a boot-time random number called
+  \textsf{CR\_REPORT\_KEYID}, which is also returned in addition to
+  CMAC.
 
-  The verification of local attestation involves using
-  \textsf{EGETKEY} instruction to fetch the \te's Report Key and
-  validating the \textsf{CMAC} on Report body in software.  The report
-  body includes \mrsigner, \mrenclave, attributes, and other
-  parameters of the \se. Note that while fetching the \rk\ for
-  verification, the \textsf{EGETKEY} will require the value of
-  \textsf{CR\_REPORT\_KEYID} to derive the right \rk.
+  Since the target enclave can directly access its \rk, the
+  verification involves manually fetching the \rk\ and verifying the
+  \textsf{CMAC} on report body. The report body includes the identity
+  (\mrsigner, \mrenclave, attributes) of the \se, and optionally
+  512-bits or report data.
+
+  \textbf{Remark}: It's unclear why local attestation needs to be tied
+  to a long-term secret (\rk) of the processor.
 
   \section{Enclave malleability and Knowledge Extractors}
   \label{sec:analysisfwk}
 
   Given the computational model of SGX, we describe certain pitfalls
-  in enclave design that might inadvertently make the enclave
+  in enclave design that might inadvertently  make  the  enclave
   malleable, or open door for building knowledge-extractors
   \cite{BellarePOK}.
 
@@ -579,7 +592,7 @@
   \label{ssec:malleability}
   As described in \secref{sec:model}, an application can exit an
   enclave either via (a) as a function return from an \ecall\ (b) as
-  an \ocall\ or (b) as an \aex. Since it's not required for an
+  an \ocall\ or (c) as an \aex. Since it's not required for an
   \ocall\ or \aex\ to return back to the enclave from the state it
   left off, it's possible for a malicious \env\ to make unexpected
   \ecall s to alter the internal state of the enclave. Enclaves whose
@@ -591,7 +604,7 @@
   example: The US government wants to use an SGX enclave to implement
   2-man rule for launching nuclear missiles. The 2-man rule requires
   that at least two \textit{different} members (generals) of the armed
-  forces authorize the launch a nuclear missile.
+  forces to authorize the launch a nuclear missile.
 
   Listing~\ref{code:malleability} describes one way to implement this.
   Essentially, the enclave keeps a list of generals, their
@@ -614,38 +627,38 @@
     morecomment=[l][\color{magenta}]{\#} }
   \begin{lstlisting}[captionpos=b,
                      caption={An enclave suseptible to state
-                       malleability}, label=code:malleability] 
-/* count of generals who have authorized launch. */ 
+                       malleability}, label=code:malleability]
+/* count of generals who have authorized launch. */
 static int auth_count = 0;
 
-/* hardcoded list of generals and their PKs */ 
+/* hardcoded list of generals and their PKs */
 struct general_info{
-  char general_name[256]; 
-  const sgx_ec256_public_t general_pub; 
-  bool has_authorized; // initialized to false 
+  char general_name[256];
+  const sgx_ec256_public_t general_pub;
+  bool has_authorized; // initialized to false
 }GENERALS[] = { ... };
 
-/* ecall made by each general with a sig on name + aux data */ 
-int auth_and_launch(const char* const general_name, 
-                    const sgx_ec256_signature_t* sig){ 
+/* ecall made by each general with a sig on name + aux data */
+int auth_and_launch(const char* const general_name,
+                    const sgx_ec256_signature_t* sig){
 
-  struct general_info* valid_general = 
+  struct general_info* valid_general =
           validate_general(general_name, sig);
 
   if(!valid_general){ return INVALID_GENERAL; }
 
-  if(!valid_general->has_authorized){ 
-    auth_count++; // AES here will be devastating!  
-    valid_general->has_authorized = true; 
+  if(!valid_general->has_authorized){
+    auth_count++; // AEX here will be devastating!
+    valid_general->has_authorized = true;
   }else{
-    return GENERAL_ALREADY_AUTHORIZED_ACTION; // replay 
+    return GENERAL_ALREADY_AUTHORIZED_ACTION; // replay
   }
 
-  if(auth_count == 2){ 
-    return nuke_the_kashbah(location); 
+  if(auth_count >= 2){
+    return nuke_the_kashbah(location);
   }
 
-  return PENDING_AUTHORIZATION; 
+  return PENDING_AUTHORIZATION;
 }
 \end{lstlisting}
 \end{center}
@@ -657,12 +670,12 @@ int auth_and_launch(const char* const general_name,
   \begin{enumerate}
   \item The attacker first feeds $\langle g_1, \sigma_1 \rangle$ to
     \texttt{auth\_and\_launch} function with the intent of causing an
-    \aex\ between lines 19 and 20. Since the attacker can artificially
+    \aex\ between lines 21 and 22. Since the attacker can artificially
     cause an interrupt and also instantiate multiple copies of the
     enclave in parallel, given a polynomial number of trials (in
-    program length), the attacker can cause an \aex\ between line 19
-    and 20 W.H.P. Note that at the time of a successful \aex\ between
-    line 19 and 20, the \texttt{auth\_count} and
+    program length), the attacker can cause an \aex\ between line 21
+    and 22 w.h.p. Note that at the time of a successful \aex\ between
+    line 21 and 22, the \texttt{auth\_count} and
     \texttt{has\_authorized} variables will be in an inconsistent
     state where the \texttt{has\_authorized} would still be
     \texttt{false} and another \ecall\ to \texttt{auth\_and\_launch}
@@ -674,7 +687,7 @@ int auth_and_launch(const char* const general_name,
     old parameters $\langle g_1, \sigma_1 \rangle$. Since the first
     \ecall\ had incremented the counter, but left the authorization
     state inconsistent, the second \ecall\ will once again increment
-    \texttt{auth\_count} leading to a nuclear attack!
+    \texttt{auth\_count}, ultimately leading to a nuclear attack!
 
   \item While not applicable in this case, in some cases it might be
     necessary for an attacker to resume the first \ecall\ after the
@@ -710,22 +723,21 @@ int auth_and_launch(const char* const general_name,
   Normally, one designs $\Sigma$-protocols \textit{with interaction}
   between a prover and a verifier in mind, and then uses Fiat-Shamir
   \cite{FiatShamir} heuristic\footnote{In the Fiat-Shamir heuristic,
-    the prover \textit{pretends} to be a verifier and a random oracle,
-    based on publicly known fields of the protocol (such as the
-    commitment value, user's input message, etc.) generates the
-    challenge string.} to convert it into a useful non-interactive
-  use-case such as a signature scheme. Most of these protocols just
-  require the prover, which in this case will be enclave, to respond
-  to two challenge message for a given commitment message to reveal
-  the secret.
+    the prover also \textit{pretends} to be an honest verifier and
+    generates the challenege string via a random oracle, based on
+    publicly known fields of the protocol (such as the commitment
+    value, user's input message, etc.).} to convert it into a useful
+  non-interactive use-case such as a signature scheme. Most of these
+  protocols just require the prover to respond to two challenge
+  message for a given commitment message to reveal the secret.
 
   If an enclave is not implemented appropriately, one can induce an
   artificial \aex\ right after the commitment phase, and call the
   enclave with different messages in possibly different threads to
   generate two responses to the same commitment message. Note that
-  \aex in conjunction with multi-threading opens doors for a limited
+  \aex\ in conjunction with multi-threading opens doors for a limited
   form of enclave rewinding and presents a larger attack surface than
-  \aex alone.  Unless, an enclave requires multi-threading, it's wise
+  \aex\ alone. Unless, an enclave requires multi-threading, it's wise
   to set the number of possible threads to the bare minimum.
 
   \section{SGX remote attestation}
@@ -971,7 +983,7 @@ int auth_and_launch(const char* const general_name,
 
   Figure~\ref{ssec:epidprov} describes the details about EPID
   provisioning.
- 
+
 \bibliographystyle{alpha} \bibliography{sgx_biblio}
 \end{document}
 \documentclass[letterpaper]{article} \usepackage{cite}
@@ -1189,7 +1201,7 @@ int auth_and_launch(const char* const general_name,
     familiar with \textsf{encrypt-then-mac} vs.
     \textsf{mac-then-encrypt} debate should require no further
     explanation.}.
-  
+
   To summarize, \textit{an enclave is a protocol} composed of several
   sub-protocols. In order for the enclave to be secure, it's essential
   that sequential and concurrent composition of sub-protocols remain
@@ -1498,7 +1510,7 @@ int auth_and_launch(const char* const general_name,
   Key. SGX solves this problem by providing \textit{oracle access} to
   \te's Report Key via \textsf{EREPORT} instruction
   \cite[\S14.4.1]{intelsdm}.
-  
+
   To compute local attestation, the \se\ obtains the \mrenclave\ and
   attributes of the \te\ through some out-of-band mechanism (which
   might be adversarial). Based on \te's \mrenclave, the
@@ -1913,6 +1925,6 @@ sgx_ec256_signature_t* sig){ struct general_info* valid_general =
 
   Figure~\ref{ssec:epidprov} describes the details about EPID
   provisioning.
- 
+
 \bibliographystyle{alpha} \bibliography{sgx_biblio}
 \end{document}

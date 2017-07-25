@@ -1,7 +1,7 @@
 SOURCES     := $(wildcard *.tex) $(wildcard *.bib)
-MAIN_SRC    := sgx_analysis_framework.tex
+MAIN_SRC    := us-17-Swami-SGX-Remote-Attestation-Is-Not-Sufficient-wp.tex
 OUTPUT_DIRS := build
-ALL         := sgx_analysis_framework.pdf
+ALL         := us-17-Swami-SGX-Remote-Attestation-Is-Not-Sufficient-wp.pdf
 AUX_SRC     := $(MAIN_SRC:%.tex=%.aux)
 HOST 		:= $(shell uname)
 
