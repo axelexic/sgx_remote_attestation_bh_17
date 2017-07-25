@@ -747,14 +747,13 @@ int auth_and_launch(const char* const general_name,
   simulate any piece of computing hardware, unless there's an inbuilt
   asymmetry between what the software ``knows'' and what the hardware
   knows, it's impossible to prevent software simulator attacks in such
-  systems. On the other hand, each independent piece of software needs
-  to prove that it's running on a real hardware. Therefore, each
-  independent software must somehow have direct or oracle access to
-  the secret that the hardware is holding. The essence of any
+  systems. On the other hand, each independent piece of software must somehow have
+  raw or oracle access to the hardware's secret so that it can prove to remote parties that it's running 
+  on a real hardware. The essence of any
   remote-attestation scheme in such systems is to address these two
-  conflicting requirements. {\em Note}: Even limiting access to raw
+  conflicting requirements. {\em Note}: Limiting access to raw
   hardware keys via an oracle is not sufficient to thwart simulator
-  based attacks. An attacker can run it's hardware simulator on a real
+  based attacks. An attacker can run the hardware simulator on a real
   hardware, gain access to the hardware-secret via the oracle, and
   then impersonate as the real hardware.
 
@@ -767,50 +766,26 @@ int auth_and_launch(const char* const general_name,
   \begin{enumerate}
     \item Intel has created a (set of) privileged enclaves---called
       \textsf{Provisioning Enclave} (\pve) and \textsf{Provisioning
-        Certification Enclave} (\pce)\footnote{Intel addresses these
-        enclaves by their acronyms, \pve\ and \pce, only. The
-        descriptive names are author's interpretation.}---with raw
-      access to the Provisioning Key and Provisioning Seal Key. The
-      \pve\ and \pce\ use the Provisioning Key as the root-of-trust
-      between Intel Attestation Service and the SGX CPU to bootstrap a
-      new set of credentials for a Group Signature Scheme called
-      Enhanced Privacy ID (EPID) \cite{epid}. Since EPID key
-      provisioning takes place only once\footnote{EPID re-provisioning
-        might take place if the CPU's Security Version Number (CSVN
-        \cite[\S39.4.2.2]{intelsdm}) or the Software Version Number
-        (ISVSVN \cite[\S39.4.2.1]{intelsdm}) of \pce\ changes.}, the
-      Provisioning Key has minimal exposure.
+        Certification Enclave} (\pce)---that have raw
+      access to \pk\ and \psk. The
+      \pve\ and \pce\ use \pk\ and \psk\ to bootstrap a
+      new set of software-only credentials for a group-signature scheme called
+      Enhanced Privacy ID (EPID) \cite{epid}. Since only Intel signed enclaves have access to \pk\ and \psk\ no malicous simulator can access these keys. 
 
     \item Once a platform has been provisioned with EPID keys, another
       Intel signed enclave called \textsf{Quoting Enclave} (\qe) is
       given raw access to EPID keys and made responsible for
-      generating remote-attestation results on behalf of other
-      arbitrary--potentially malicious---enclaves.
+      generating remote-attestation results on behalf of other---potentially malicious---enclaves.
 
-      To compute remote attestation, an arbitrary enclave first
-      generates a local attestation with \textsf{Quoting Enclave} as
-      the target in Figure~\ref{fig:localattestationflow}. The
-      \textsf{Quoting Enclave} first validates the local-attestation
-      report and subsequently uses EPID key to sign all the parameters
-      it validated during local attestation. Since local-attestation
-      uses the hardware resident identity of the enclave (i.e.,
-      \mrenclave, \mrsigner, and enclave attributes), which cannot be
-      forged (see \secref{ssec:localatt}), the remote-attestation
-      result on the enclave identity cannot be forged
-      either. Furthermore, since arbitrary software never has direct
-      or oracle access to either Provisioning Key or EPID
-      private-keys, simulator based attacks where the simulator itself
-      is a valid enclave are also thwarted.
   \end{enumerate}
 
   The rest of this section is organized as follows: \secref{ssec:epid}
   provides an overview of EPID and how it's has been implemented by
   Intel. Since the official \cite{epid} paper leaves several details
   out (e.g., the Zero-Knowledge proof of inequality for signature
-  based revocation is left out from the paper), the goal of this
-  section to fill in those gaps based on \textsf{Provisioning Enclave}
-  and \texttt{epid-sdk} open source implementation
-  \cite{epidsdk}. \secref{ssec:epidprov} provides detailed information
+  based revocation), the goal of this
+  section to fill in those gaps based on open source implementation
+  of \texttt{epid-sdk} \cite{epidsdk}. \secref{ssec:epidprov} provides detailed information
   on how the \textsf{Provisioning Enclave} joins the SGX EPID
   group. Finally, \secref{ssec:qe} provides details about
   \textsf{Quoting Enclave} and how SGX remote attestation should be
@@ -831,68 +806,52 @@ int auth_and_launch(const char* const general_name,
   \cite{ChaumGroupSignatures} as a means to address this. Their idea
   was to create a signature-scheme where a single ``group
   public-key,'' can verify messages signed by different private
-  keys. In addition to anonymity, several additional requirements were
-  later on added to this list for new use cases.
+  keys (having a single private key would destroy accountability 
+  on part of the signer). In addition to anonymity, several additional 
+  requirements were later on added to this list for different use cases.
 
   The literature on group signature schemes is huge, both for formal
-  models of its security
-  \cite{BMW03,dynamicGroupSignatures,fulldynamicgroupsignature} as
-  well as for different constructions \cite{bbs, Furukawa2005,
-    coalitionresistant, camenischLysyankaya} based on different
-  computational assumptions. Among these, from a practical deployment
+  models of its security as well as for different constructions using different
+  computational assumptions \cite{BMW03,dynamicGroupSignatures,
+  fulldynamicgroupsignature, bbs, Furukawa2005, coalitionresistant, 
+  camenischLysyankaya}. Among these, from a practical deployment
   perspective, Direct Anonymous Attestation \cite{daa, ucdaa} (DAA) is
-  closest to EPID and also most widely deployed.
-
+  closest to EPID and also most widely deployed. We do not review these schemes any further in this paper.
 
   In EPID, there are four entities:
 
   \begin{description}
-  \item [Issuer ($\mathcal{I}$):] It's the entity that decides who
-    should be part of a given EPID group. In case of SGX, the Intel
-    Attestation Service acts as the issuer. Its goal is to dynamically
-    (i.e., one-by-one) add new SGX Processors as they come
-    on-line. Group signature schemes do no define what credentials one
-    must possess before they can be admitted to given group. However,
-    for group signatures to be meaningful, some form of out-of-band
-    mechanism must decide group membership criteria. In case of SGX,
-    the Intel Attestation Service uses knowledge of Root Provisioning
-    Key as the deciding factor on who should join the SGX Processor
-    group (see \secref{ssec:epidprov}).
+  \item [Issuer ($\mathcal{I}$):] It's the entity that grants group membership credentials to its members. In case of SGX, the Intel Attestation Service acts as the issuer. Its goal is to dynamically add new SGX Processors as they come on-line. 
 
-  \item[Revocation Manager ($\mathcal{R}$):] Unlike standard signature
-    schemes, where revocation only includes the public-key of the
-    revoked private-key, group signatures require a different
-    approach. EPID has two forms of revocation:
+    From a practical perspective, there are two fundamental questions that an Issuer must address: (a) who should be allowed to join the group, and (b) how should the membership credentials generated to build a signature scheme. Most group signature schemes, including EPID, only answer the ``how'' question and leave the ``who'' question to the system designer. In case of SGX, Intel Attestation Service uses knowledge of \rpk\ as the deciding factor on who should be allowed to join the SGX EPID Group (see \secref{ssec:epidprov}).
+
+  \item[Revocation Manager ($\mathcal{R}$):] It's the entity that decides who are the (known) offending members of the group. Unlike standard signature schemes, where revocation only includes the public-key of fraudulent signers, group signatures require a different approach. EPID has two forms of revocation:
 
     \begin{description}
     \item[\texttt{Priv-RL}]: Private-key based revocation list.
-      \texttt{Priv-RL} is a list of all the compromised
-      \textit{private-keys} known to Revocation Manager. EPID does not
-      support full-anonymity\footnote{In the \textsf{anonymity} game
-        of \cite{BMW03}, the adversary gets the private key of all the
+      \texttt{Priv-RL} is a list of compromised \textit{private-keys} known to Revocation Manager. EPID does not support full-anonymity in the sense of \cite{BMW03}\footnote{In the \textsf{anonymity} game of \cite{BMW03}, the adversary gets the private key of all the
         members, and yet cannot distinguish one signer from another
-        based on signatures alone.} in the sense of \cite{BMW03}, and
-      putting a private key in \texttt{Priv-RL}, completely destroys
+        based on signatures alone.}, and
+      putting a private key in \texttt{Priv-RL}, retroactively destroys
       the anonymity of the signer.
       
       \item[\texttt{Sig-RL}]: Signature based revocation list. An EPID
         signature consists of a basic BBS+ \cite{bbsplus, bbs} based
         signature along with two group elements $\langle B, B^f
-        \rangle $ from a group where Discrete Log is hard. $B$ is
+        \rangle$ from a group where Discrete-Log is hard. $B$ is
         called the basename and $f$ is the EPID private-key. The
-        \texttt{Sig-RL} consists of a list $\langle B_i, B_i^f
-        \rangle$ pairs that the Revocation Manager believes to have
-        been created by a fraudulent signer. Signature based
-        revocation is an alternative to traceability found in most
-        group signature schemes.
+        \texttt{Sig-RL} consists of a list of $\langle B_i, B_i^{f_i}
+        \rangle$ pairs from previously signed messages that the 
+        Revocation Manager believes to have been signed fraudulently. To sign a message, an honest signer must pick a random\footnote{A signer might choose to use the same $B$ if they want signatures to be linked. In SGX, the first 128-bits of $B$ are always set to the Service Provide ID (SPID) \cite{ias} and contrary to what Intel claims, a platform never has un-linkable signatures!} $B$ and prove in Zero-Knowledge that none of the $\langle B_i, B_i^{f_i} \rangle$ pairs could have been generated using the signer's $f$ (essentially prove in Zero-Knowledge that none of the discrete logs in the list equal to $f$). 
+
+        \textbf{Remark}: For any $f$, a single signature-revocation-pair $\langle B_i, B_i^f\rangle$ is sufficient to identify fraudulent signers, however, this does not mean that the length of \texttt{Sig-RL} is limited by the number of signers. A fraudulent signer can still keep signing messages, and the Revocation Manager will not be able to decide if such a signer is already present in \texttt{Sig-RL}. Because of this, \texttt{Sig-RL} can become very large.
     \end{description}
 
     In EPID, a signer needs to have access to the most up-to-date
     \texttt{Sig-RL} to generate a valid signature. This is
     fundamentally different from \textit{verifier local revocation}
     (VLR) \cite{BonehVLR} where the signer never needs up-to-date
-    revocation list to generate a valid signature. Also, unlike
-    verifier local signatures, EPID signatures are of variable length
+    revocation list to \textit{generate} a valid signature (the verifier, of course, always needs up-to-date revocation list). Also, unlike verifier local signatures, EPID signatures are of variable length
     and even same message signed with the same private-key can have
     different lengths depending upon the length of
     \texttt{Sig-RL}. It's surprising that such a signature scheme can
@@ -905,8 +864,8 @@ int auth_and_launch(const char* const general_name,
       the group.
 
       Platforms generate their private key (essentially a group
-      element in $\mathbb{F}_p^{\times}$) using a private-coin
-      protocol. Through a \textit{blinded join} process, the Issuer
+      element in $\mathbb{F}_p^{\times}$) and join the group using a private-coin
+      protocol. During the \textit{blinded join} process, the Issuer
       grants a ``certificate'' on Platform's private key, which
       includes the group's identity as well as group
       public-key. Together, the Issuer certificate and Platform's
@@ -914,8 +873,8 @@ int auth_and_launch(const char* const general_name,
       \textsf{Provisioning Enclave} is responsible for joining the SGX
       EPID group. Once \textsf{Provisioning Enclave} has obtained a
       signing key from Intel Attestation Service, it stores this key
-      on non-volatile storage encrypted with \sk\ that has been
-      diversified using the \mrsigner\ of \pve. Since Intel is the
+      on non-volatile storage encrypted with \sk\ (derived 
+      using \mrsigner\ of \pve). Since Intel is the
       \mrsigner\ of \pve, only Intel Signed enclave can access the
       EPID signing key.
 
@@ -953,16 +912,16 @@ int auth_and_launch(const char* const general_name,
   \end{figure}
 
   As described in \secref{sec:remoteatt}, each SGX capable processor
-  has a unique Provisioning Key that's also known to Intel Attestation
-  Service. In theory, one could use this key as the private key (the
-  $\gamma$ in \cite{epid}) for EPID signatures. There are two problems
-  with this: First a compromise of this key would render the CPU
-  useless in-perpetuity. But more importantly, since EPID does not
-  have full-anonymity and Intel knows this key, the scheme will lose
+  has a unique \pk\ that's also known to Intel Attestation Service. In
+  theory, one could use this key as the private key (the $\gamma$ in
+  \cite{epid}) for EPID signatures. There are two problems with this:
+  First a compromise of this key would render the CPU useless
+  in-perpetuity. But more importantly, since EPID does not have
+  full-anonymity and Intel knows this key, the scheme will lose
   anonymity.
 
   In order to create new set of EPID credentials, the SGX capable
-  processor must participate in the EPID Join processor. When
+  processor must participate in the EPID Join process. When
   presented with a join request, the Intel Attestation Service must
   somehow ensure that the join request indeed came from an SGX
   processor; allowing non-SGX platforms to join SGX EPID group would
@@ -985,22 +944,42 @@ int auth_and_launch(const char* const general_name,
   Figure~\ref{fig:epidprov} describes the details about EPID
   provisioning.
 
-\section{Conclusion}
-  This paper describes the pitfalls in designing SGX enclaves and 
-  highlights issues with sequential and concurrent composition of 
-  protocols. While these issues have been known for a long time 
-  in cryptography literature, their impact was mainly limited to 
-  key-exchange protocols in the past. With SGX enclaves, however, 
-  these issues have become front-and-center. In addition, this paper
-  describes enclave state-malleability which must be taken into 
-  account while implementing new enclaves.
+\subsection{Quoting Enclave}
+\label{ssec:qe}
 
-  Based on these three criteria, we have analyzed Intel provided \pve, and 
-  \pce enclaves and found both to be secure against. In terms of 
-  anonimity guaratees  
+\section{Conclusion}
+\label{sec:conclusion}
+  This paper describes the pitfalls in designing SGX enclaves and
+  highlights issues with sequential and concurrent composition of
+  protocols. In addition, this paper also describes enclave
+  state-malleability which must be taken into account while
+  implementing new enclaves.
+
+  Based on these three criteria, we have analyzed Intel provided \pve,
+  and \pce enclaves and found both to be secure. On the other hand, we
+  find following issues with current implementation of Intel provided
+  enclaves: 
+
+  \begin{itemized}
+    \item The EPID join process uses raw \pk\ and identifier's derived
+      from this key. This essentially destroys the anonymity of the
+      platform during the EPID join process. We note that in case of
+      SGX, it's possible to build a Witness-Indistinguishable or
+      Witness-Hiding join protocol that not can only guarantee anonymity
+      of Platforms during the join process, but also alleviate
+      concerns with concurrent join.
+
+    \item In its current implementation, the Quoting Enclave encrypts
+      all EPID signatures that can only be decrypted and verified by
+      the Intel Attestation Service. Not only does this destroy the
+      anonymity of signers, but also also allows Intel to facilitate
+      Man-in-the-Middle attacks on enclaves, should Intel choose (or
+      be compelled) to do so.
+  \end{itemize}
 
 \section{Acknowledgements}
-  We would like to thank Mike Hamburg for suggestions, corrections, and 
-  improvements.
+\label{sec:ack}
+  We would like to thank Mike Hamburg for his comments and feedback on
+  this paper.
 \bibliographystyle{alpha} \bibliography{sgx_biblio}
 \end{document}
