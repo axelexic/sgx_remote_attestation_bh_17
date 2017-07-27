@@ -86,7 +86,7 @@
   new enclaves. We analyze Intel provided EPID \cite{epid}
   \textsf{Provisioning} and \textsf{Quoting} enclave \cite{sgxattest}
   and report our (largely positive) findings. We also provide details
-  about how SGX uses of EPID Group Signatures and report (largely
+  about how SGX uses EPID Group Signatures and report (largely
   negative) results about claimed anonymity guarantees.
 
 \end{abstract}
@@ -580,7 +580,7 @@
   \textbf{Remark}: It's unclear why local attestation needs to be tied
   to a long-term secret (\rk) of the processor.
 
-  \section{Enclave malleability and Knowledge Extractors}
+  \section{Enclave Malleability and Knowledge Extractors}
   \label{sec:analysisfwk}
 
   Given the computational model of SGX, we describe certain pitfalls
@@ -720,7 +720,7 @@ int auth_and_launch(const char* const general_name,
   between a prover and a verifier in mind, and then uses Fiat-Shamir
   \cite{FiatShamir} heuristic\footnote{In the Fiat-Shamir heuristic,
     the prover also \textit{pretends} to be an honest verifier and
-    generates the challenege string via a random oracle, based on
+    generates the challenge string via a random oracle, based on
     publicly known fields of the protocol (such as the commitment
     value, user's input message, etc.).} to convert it into a useful
   non-interactive use-case such as a signature scheme. Most of these
